@@ -12,10 +12,12 @@ A free-to-enter crypto trading competition. Virtual bankroll, real live prices, 
 |---|---|
 | [`RESEARCH.md`](RESEARCH.md) | Market + legal research. Why this concept and not the eight others. The hard constraints. |
 | [`PLAN.md`](PLAN.md) | Product design. Contest structure, cold start, retention mechanics, scope. |
+| [`DESIGN.md`](DESIGN.md) | Layout and interaction, derived from published benchmarks. Onboarding, leaderboards, streaks, sharing, anti-patterns. |
 | [`ARCHITECTURE.md`](ARCHITECTURE.md) | The $0/month stack. Anti-cheat design. Scaling path. |
 | [`ECONOMICS.md`](ECONOMICS.md) | Revenue, prize funding, the legal correction to paid resets. |
 | [`LOOP-ENGINEERING.md`](LOOP-ENGINEERING.md) | How we build. Spec-driven loops, verification layers, slice order. |
 | [`KICKOFF.md`](KICKOFF.md) | **Start here to actually begin.** Step by step. |
+| [`spec/references/CAPTURE-LIST.md`](spec/references/CAPTURE-LIST.md) | Exactly which apps and screens to screenshot. **Current blocker.** |
 | [`spec/DECISIONS.md`](spec/DECISIONS.md) | Append-only decision log. The memory across build loops. |
 | [`spec/GLOSSARY.md`](spec/GLOSSARY.md) | One meaning per term. Read before writing any spec. |
 
