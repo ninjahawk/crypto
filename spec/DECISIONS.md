@@ -134,3 +134,52 @@ Format: `NNNN — Title` / Date / Status / Decision / Why / Consequences.
 **Decision:** Any score not yet verified renders in a visually distinct provisional state. Verified/final scores render differently and only after audit.
 
 **Why:** Users will screenshot a leading position and post it. If a provisional score later fails verification, the app must have been unambiguous that it was not final. This is both a fairness matter and a dispute-prevention one.
+
+---
+
+## 0010 — Pick'em is the entry format; trading depth is progression
+
+**Date:** 2026-07-27 · **Status:** Accepted
+
+**Decision:** The core interaction at launch is tapping N tokens from a curated slate (PrizePicks-style), not a full buy/sell trading terminal. Position sizing and full trading unlock later as progression.
+
+**Why:**
+- Published onboarding benchmarks: activation rates *double* when onboarding drives one meaningful action before exposing the full interface, and the target for time-to-first-core-action is under 60 seconds. Tapping five tokens hits both; an order-entry flow does not.
+- PrizePicks became the dominant US pick'em operator with this interface, and it is repeatedly credited to the clean squares grid. Underdog's competing advantage is described identically — speed to a completed pick.
+- 77% of DAU quit within three days, so first-session conversion dominates every other design consideration.
+
+**Consequences:**
+- Equal-weight picks naturally satisfy the 40% position cap in 0008 without a rule the user must learn.
+- Narrows the degen strategy space — fewer degrees of freedom for all-in variance plays.
+- Scoring becomes trivially explainable, and clarity is itself a measurable retention lever.
+- Reference apps must be chosen accordingly: PrizePicks/Underdog for the pick surface, Robinhood for the portfolio/P&L surface.
+
+---
+
+## 0011 — Leaderboards reward movement and scope comparison locally
+
+**Date:** 2026-07-27 · **Status:** Accepted
+
+**Decision:** Leaderboards display deltas (movement) prominently, and scope comparison to the user's neighbourhood (±3), self-selected rivals, and ghosts — plus top 3 for aspiration. No global ranked list.
+
+**Why:** Leaderboard research is direct on this: rewarding movement motivates everyone while status motivates only leaders, and scoping comparison "converts a discouraging metric into a motivating one for 100% of users instead of 1%." A global list actively de-motivates ~99% of the field.
+
+**Consequences:**
+- Independently reinforces 0004 (never display field size) on effectiveness grounds, not only honesty.
+- Requires storing per-period rank history to compute deltas.
+- "Passing the person above you" becomes the core daily engagement goal.
+
+---
+
+## 0012 — No signup wall; identity requested after first picks
+
+**Date:** 2026-07-27 · **Status:** Accepted
+
+**Decision:** Users land directly on the current slate and can make picks with no account. Identity is requested only when locking in an entry.
+
+**Why:** Every field or screen before activation increases abandonment; only 19.2% of users complete onboarding industry-wide. Requesting identity after the user has picks worth saving puts sunk cost on their side. Matters doubly for a link-shared web app — someone tapping a link in a tweet should be picking within seconds.
+
+**Consequences:**
+- Needs anonymous session state that survives account creation without losing picks.
+- Abuse surface: anonymous entries must not be prize-eligible until identity exists.
+- New users open with streak day 1 lit and slate pre-loaded (endowed progress).
