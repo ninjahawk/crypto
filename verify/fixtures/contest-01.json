@@ -1,0 +1,45 @@
+{
+  "_comment": "Hand-computed. Do NOT regenerate from code — these exist to check the implementation, so they must be derived independently of it.",
+  "contestId": "fixture-01",
+  "note": "Base case. Round numbers, a human/ghost tie on score, no bitcoin on the slate so hodl-btc must be absent.",
+  "picksRequired": 5,
+  "payingPositions": 2,
+  "opensAt": "2026-01-01T00:00:00Z",
+  "slate": ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot"],
+  "openPrices": { "alpha": 100, "bravo": 200, "charlie": 50, "delta": 400, "echo": 10, "foxtrot": 80 },
+  "closePrices": { "alpha": 110, "bravo": 180, "charlie": 75, "delta": 400, "echo": 12, "foxtrot": 60 },
+  "meta": {
+    "alpha": { "ch24": 5 },
+    "bravo": { "ch24": -3 },
+    "charlie": { "ch24": 12 },
+    "delta": { "ch24": 0 },
+    "echo": { "ch24": -8 },
+    "foxtrot": { "ch24": 20 }
+  },
+  "expectedPct": { "alpha": 10, "bravo": -10, "charlie": 50, "delta": 0, "echo": 20, "foxtrot": -25 },
+  "entries": [
+    { "entryId": "e-alice", "lockedAt": "2026-01-01T00:05:00Z", "picks": ["alpha", "charlie", "echo", "delta", "bravo"] },
+    { "entryId": "e-bob", "lockedAt": "2026-01-01T00:03:00Z", "picks": ["foxtrot", "bravo", "delta", "alpha", "echo"] },
+    { "entryId": "e-carol", "lockedAt": "2026-01-01T00:07:00Z", "picks": ["charlie", "echo", "alpha", "delta", "foxtrot"] }
+  ],
+  "prevWinnerPicks": null,
+  "expectedGhostPicks": {
+    "the-index": ["alpha", "bravo", "charlie", "delta", "echo", "foxtrot"],
+    "diamond-hands": ["echo", "bravo", "delta", "alpha", "charlie"],
+    "paper-hands": ["foxtrot", "charlie", "alpha", "delta", "bravo"]
+  },
+  "absentGhosts": ["hodl-btc", "last-champion"],
+  "expectedScores": {
+    "e-alice": 14,
+    "e-bob": -1,
+    "e-carol": 11,
+    "the-index": 7.5,
+    "diamond-hands": 14,
+    "paper-hands": 5
+  },
+  "expectedOrder": ["diamond-hands", "e-alice", "e-carol", "the-index", "paper-hands", "e-bob"],
+  "expectedCutLine": {
+    "e-alice": { "inTheMoney": true, "distance": 3, "threshold": 11 },
+    "e-bob": { "inTheMoney": false, "distance": 12, "threshold": 11 }
+  }
+}

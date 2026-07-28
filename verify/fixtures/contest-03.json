@@ -1,0 +1,37 @@
+{
+  "_comment": "Hand-computed. Do NOT regenerate from code.",
+  "contestId": "fixture-03",
+  "note": "Edge cases: every score negative, a flat token, a single human entry, and a field smaller than the prize table so the cut-line small-field branch runs.",
+  "picksRequired": 2,
+  "payingPositions": 3,
+  "opensAt": "2026-01-03T00:00:00Z",
+  "slate": ["red", "blue", "green"],
+  "openPrices": { "red": 10, "blue": 20, "green": 5 },
+  "closePrices": { "red": 8, "blue": 15, "green": 5 },
+  "meta": {
+    "red": { "ch24": -1 },
+    "blue": { "ch24": -2 },
+    "green": { "ch24": 3 }
+  },
+  "expectedPct": { "red": -20, "blue": -25, "green": 0 },
+  "entries": [
+    { "entryId": "e-frank", "lockedAt": "2026-01-03T00:02:00Z", "picks": ["red", "green"] }
+  ],
+  "prevWinnerPicks": null,
+  "expectedGhostPicks": {
+    "the-index": ["red", "blue", "green"],
+    "diamond-hands": ["blue", "red"],
+    "paper-hands": ["green", "red"]
+  },
+  "absentGhosts": ["hodl-btc", "last-champion"],
+  "expectedScores": {
+    "e-frank": -10,
+    "the-index": -15,
+    "diamond-hands": -22.5,
+    "paper-hands": -10
+  },
+  "expectedOrder": ["paper-hands", "e-frank", "the-index", "diamond-hands"],
+  "expectedCutLine": {
+    "e-frank": { "inTheMoney": true, "distance": 0, "threshold": null }
+  }
+}

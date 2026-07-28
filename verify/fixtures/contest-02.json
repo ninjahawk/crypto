@@ -1,0 +1,53 @@
+{
+  "_comment": "Hand-computed. Do NOT regenerate from code.",
+  "contestId": "fixture-02",
+  "note": "Bitcoin on the slate so hodl-btc runs. A previous champion exists. Repeating decimals exercise the 4dp rounding. Two ghosts tie on 5 and must break by entryId.",
+  "picksRequired": 3,
+  "payingPositions": 1,
+  "opensAt": "2026-01-02T00:00:00Z",
+  "slate": ["bitcoin", "ethereum", "solana", "dogecoin"],
+  "openPrices": { "bitcoin": 60000, "ethereum": 3000, "solana": 150, "dogecoin": 0.1 },
+  "closePrices": { "bitcoin": 63000, "ethereum": 2700, "solana": 180, "dogecoin": 0.13 },
+  "meta": {
+    "bitcoin": { "ch24": 1 },
+    "ethereum": { "ch24": -2 },
+    "solana": { "ch24": 8 },
+    "dogecoin": { "ch24": -5 }
+  },
+  "expectedPct": { "bitcoin": 5, "ethereum": -10, "solana": 20, "dogecoin": 30 },
+  "entries": [
+    { "entryId": "e-dave", "lockedAt": "2026-01-02T00:10:00Z", "picks": ["bitcoin", "solana", "dogecoin"] },
+    { "entryId": "e-erin", "lockedAt": "2026-01-02T00:12:00Z", "picks": ["ethereum", "solana", "dogecoin"] }
+  ],
+  "prevWinnerPicks": ["bitcoin", "dogecoin"],
+  "expectedGhostPicks": {
+    "hodl-btc": ["bitcoin"],
+    "the-index": ["bitcoin", "ethereum", "solana", "dogecoin"],
+    "diamond-hands": ["dogecoin", "ethereum", "bitcoin"],
+    "paper-hands": ["solana", "bitcoin", "ethereum"],
+    "last-champion": ["bitcoin", "dogecoin"]
+  },
+  "absentGhosts": [],
+  "expectedScores": {
+    "e-dave": 18.3333,
+    "e-erin": 13.3333,
+    "hodl-btc": 5,
+    "the-index": 11.25,
+    "diamond-hands": 8.3333,
+    "paper-hands": 5,
+    "last-champion": 17.5
+  },
+  "expectedOrder": [
+    "e-dave",
+    "last-champion",
+    "e-erin",
+    "the-index",
+    "diamond-hands",
+    "hodl-btc",
+    "paper-hands"
+  ],
+  "expectedCutLine": {
+    "e-dave": { "inTheMoney": true, "distance": 0, "threshold": 18.3333 },
+    "e-erin": { "inTheMoney": false, "distance": 5, "threshold": 18.3333 }
+  }
+}
