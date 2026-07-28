@@ -34,10 +34,12 @@ export function fmtPrice(value) {
   if (!Number.isFinite(value)) return '—';
   if (value === 0) return '$0';
   const abs = Math.abs(value);
-  if (abs >= 1000) return `$${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
-  if (abs >= 1) return `$${value.toFixed(2)}`;
-  if (abs >= 0.01) return `$${value.toFixed(4)}`;
-  return `$${value.toPrecision(3)}`;
+  if (abs >= 1000) return `$${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+  if (abs >= 1) return `$${value.toFixed(4)}`;
+  if (abs >= 0.01) return `$${value.toFixed(6)}`;
+  // Memecoins live at 1e-7. Three significant figures renders a real 0.5%
+  // move as an identical string, which reads as a frozen screen.
+  return `$${value.toPrecision(6)}`;
 }
 
 export function fmtPct(value, { sign = true } = {}) {

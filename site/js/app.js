@@ -38,6 +38,7 @@ const app = {
   view: 'slate',
   draft: [],
   ticker: null,
+  moved: new Map(), // tokenId -> 'up' | 'down', drained by flashMoved()
 };
 
 async function boot() {
@@ -90,11 +91,19 @@ function startLiveFeed() {
   let dirty = false;
 
   app.feed = createPriceFeed(app.data.snapshot.tokens, (id, price, ch24) => {
+    // Counter the e2e harness reads to confirm real updates are arriving even
+    // when the market is quiet enough that no rendered digit changes.
+    window.__cutlinePolls = (window.__cutlinePolls ?? 0) + 1;
     const token = app.data.snapshot.tokens[id];
     if (!token) return;
+    if (price !== token.price) {
+      // Remember the direction so the row can flash. A number that rounds to
+      // the same string still moved, and the user needs to see that it did.
+      app.moved.set(id, price > token.price ? 'up' : 'down');
+      dirty = true;
+    }
     token.price = price;
     if (Number.isFinite(ch24)) token.ch24 = ch24;
-    dirty = true;
   });
 
   app.repaint = setInterval(() => {
@@ -105,7 +114,28 @@ function startLiveFeed() {
     if ($('.sheet')) return;
     render();
     markLive();
+    flashMoved();
   }, 500);
+}
+
+/**
+ * Tint rows whose price just moved.
+ *
+ * Real market data often moves a memecoin by a fraction of a percent between
+ * polls — enough to matter, not enough to change the rendered digits. Without
+ * this the screen looks frozen even while it is fully live, which is exactly
+ * how a working feed gets reported as broken.
+ */
+function flashMoved() {
+  if (app.moved.size === 0) return;
+  for (const node of document.querySelectorAll('[data-token]')) {
+    const direction = app.moved.get(node.dataset.token);
+    if (!direction) continue;
+    node.classList.remove('flash-up', 'flash-down');
+    void node.offsetWidth; // restart the animation
+    node.classList.add(direction === 'up' ? 'flash-up' : 'flash-down');
+  }
+  app.moved.clear();
 }
 
 function markLive() {

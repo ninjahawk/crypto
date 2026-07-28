@@ -91,6 +91,7 @@ export function renderTrade(ctx, mount, go) {
           el('button', {
             class: 'row row-tap',
             type: 'button',
+            'data-token': row.tokenId,
             disabled: isClosed,
             onClick: () => openTicket('sell', row.tokenId),
           }, [
@@ -129,6 +130,7 @@ export function renderTrade(ctx, mount, go) {
           el('button', {
             class: 'row row-tap',
             type: 'button',
+            'data-token': tokenId,
             disabled: room < 0.01,
             onClick: () => openTicket('buy', tokenId),
           }, [
