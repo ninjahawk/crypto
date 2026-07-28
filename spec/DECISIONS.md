@@ -183,3 +183,47 @@ Format: `NNNN — Title` / Date / Status / Decision / Why / Consequences.
 - Needs anonymous session state that survives account creation without losing picks.
 - Abuse surface: anonymous entries must not be prize-eligible until identity exists.
 - New users open with streak day 1 lit and slate pre-loaded (endowed progress).
+
+---
+
+## 0013 — Capped league cohorts, not one global leaderboard
+
+**Date:** 2026-07-27 · **Status:** Accepted · **Supersedes the global-list portion of 0011**
+
+**Decision:** Players are placed in capped cohorts ("leagues") of roughly 30. Each league has its own ranked board, its own cut line, and weekly promotion/demotion between tiers. There is no global ranked list.
+
+**Why:** Duolingo's league screens solve our cold-start problem structurally rather than cosmetically. A capped cohort means 200 real users produce seven *completely full* leagues of 30 — every board genuinely populated by real people, every user always within a few places of a cut line, and no global field size that could be displayed or misrepresented. It removes the need for fabricated users entirely (0004) instead of merely working around it. It also delivers the leaderboard research directly: comparison is scoped by construction, and promotion/demotion is movement rather than status.
+
+**Consequences:**
+- Need a league assignment and promotion/demotion algorithm; new users seed into the lowest tier.
+- Prize table is defined per league tier, so total payout scales with league count — reinforcing 0005.
+- Deltas and neighbourhood highlighting from 0011 still apply *within* a league.
+- Rank numbers render green inside the promotion zone — the cut line expressed as colour rather than a separate element.
+- Weekly close produces two celebration moments: result ("You finished #11") and promotion ("You moved up to Silver").
+
+---
+
+## 0014 — Phantom is the visual register
+
+**Date:** 2026-07-27 · **Status:** Accepted
+
+**Decision:** Adopt Phantom's design language — pure black background, single lavender accent, pill-chip top navigation, large rounded cards, generous spacing, token rows with avatar + market cap + right-aligned price with coloured % beneath.
+
+**Why:** It is the register this audience already lives in, so the product reads as native to crypto rather than as a sports app with tickers pasted in. It is also clean and restrained enough to build a system on, unlike the dense trading terminals.
+
+**Consequences:**
+- Provisional design tokens recorded in `spec/references/ANALYSIS.md` §9.
+- **Shift the accent hue before launch.** Referencing the register is fine; shipping Phantom's exact brand lavender is impersonation.
+- Phantom's empty-state approach is adopted with it: when a user has no data, fill the screen with live market content rather than a placeholder. This is how launch day avoids feeling empty.
+
+---
+
+## 0015 — Deferred signup confirmed by category precedent
+
+**Date:** 2026-07-27 · **Status:** Accepted · **Reinforces 0012**
+
+**Decision:** Keep the no-signup-wall approach from 0012.
+
+**Why:** Both PrizePicks and Underdog are fully browsable logged out, with only a persistent Sign Up chip in the corner; PrizePicks offers an explicit "View board" escape on its very first screen. Deferred signup is standard practice in this category, not a risk. Robinhood's hard wall is the outlier and rests on brand permission we do not have.
+
+**Consequences:** Onboarding follows Phantom's pattern — a short skippable interest picker with large tappable cards and progress dots — placed *after* first picks, not before.
