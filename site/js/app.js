@@ -69,9 +69,10 @@ async function boot() {
   // The countdown ticks every second, but a full re-render at 1Hz would drop
   // taps mid-selection. Patch only the countdown text; refetch prices slowly.
   app.ticker = setInterval(tickCountdowns, 1000);
-  // The published snapshot is the floor — a slow correctness backstop and the
-  // settlement record. The live socket is what people actually watch.
-  app.poller = setInterval(refreshData, 300000);
+  // Floor under the live feed: even if every price source is blocked for this
+  // user, our own published snapshot still refreshes the screen. Degrades to
+  // "updates every couple of minutes" instead of "frozen forever".
+  app.poller = setInterval(refreshData, 120000);
   startLiveFeed();
 
   document.addEventListener('visibilitychange', () => {
@@ -80,10 +81,10 @@ async function boot() {
 }
 
 /**
- * Live prices straight from a public exchange socket.
+ * Live prices from public DEX aggregators, with failover between sources.
  *
- * Repaints are throttled to ~2/s: ticks arrive far faster than that and a
- * render per tick would fight the user for the main thread mid-trade.
+ * Repaints are throttled: ticks can arrive faster than a render, and rendering
+ * per tick would fight the user for the main thread mid-trade.
  */
 function startLiveFeed() {
   let dirty = false;

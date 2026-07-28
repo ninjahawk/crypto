@@ -1,96 +1,171 @@
 /**
- * Live price feed for fresh launches.
+ * Live price feed.
  *
- * New memecoins are not listed on any centralised exchange, so there is no
- * WebSocket to subscribe to. DexScreener's public REST endpoint is keyless and
- * takes up to 30 token addresses per call, which means one request covers the
- * whole slate.
+ * New launches are on no centralised exchange, so there is no WebSocket to
+ * subscribe to — this polls public DEX aggregator REST endpoints. Both are
+ * keyless, and the request is made by the *user's* browser from the user's own
+ * IP, so every player brings their own rate-limit budget. Free at any number of
+ * players, nothing for us to scale (DECISIONS 0020).
  *
- * The request is made by the *user's* browser, from the user's IP. Every player
- * gets their own rate-limit budget, so this is free at any number of players
- * and there is nothing for us to scale. That is the same reasoning as the
- * exchange socket in DECISIONS 0020 — the cost never lands on us.
+ * Two sources with failover, deliberately on different domains. A single
+ * source is a single point of failure: an ad blocker, a corporate network, a
+ * regional block or an outage silently freezes every price in the app and the
+ * user just sees stale numbers forever. That exact symptom is why this exists.
  *
- * Settlement is unchanged: prizes are decided against our archived snapshots,
- * never against a price a client reports (DECISIONS 0006). This drives the
- * screen, not the payout.
+ * Settlement is unaffected — prizes are decided against our archived snapshots,
+ * never a price a client reports (DECISIONS 0006). This drives the screen only.
  */
 
-const DEXSCREENER = 'https://api.dexscreener.com/latest/dex/tokens/';
 const POLL_MS = 8000;
-const MAX_ADDRESSES = 30;
+const BATCH = 30;
 
-export function createPriceFeed(tokens, onUpdate) {
-  // Address → our token id. Addresses are chain-unique in practice; where a
-  // collision happens the deepest pool wins on the response side anyway.
-  const byAddress = new Map();
-  for (const [id, token] of Object.entries(tokens)) {
-    const address = token?.dex?.address;
-    if (address) byAddress.set(address.toLowerCase(), id);
-  }
+export const SOURCES = [
+  {
+    name: 'dexscreener',
+    url: (addresses) => `https://api.dexscreener.com/latest/dex/tokens/${addresses.join(',')}`,
+    parse: parseDexScreener,
+    batch: BATCH,
+  },
+  {
+    name: 'geckoterminal',
+    // Address-based multi-pool lookup, one network at a time.
+    url: (addresses, network) =>
+      `https://api.geckoterminal.com/api/v2/networks/${network}/tokens/multi/${addresses.join(',')}?include=top_pools`,
+    parse: parseGeckoTerminal,
+    batch: 20,
+    perNetwork: true,
+  },
+];
 
-  const state = { stopped: false, live: false, lastOk: 0, timer: null };
-  if (byAddress.size === 0) return { stop() {}, isLive: () => false };
+export function parseDexScreener(body) {
+  const deepest = new Map();
+  for (const pair of body?.pairs ?? []) {
+    const address = String(pair?.baseToken?.address ?? '').toLowerCase();
+    const price = Number(pair?.priceUsd);
+    const liquidity = Number(pair?.liquidity?.usd ?? 0);
+    if (!address || !Number.isFinite(price) || price <= 0) continue;
 
-  const batches = [];
-  const all = [...byAddress.keys()];
-  for (let i = 0; i < all.length; i += MAX_ADDRESSES) {
-    batches.push(all.slice(i, i + MAX_ADDRESSES));
-  }
-
-  async function pollOnce() {
-    if (state.stopped) return;
-    try {
-      const responses = await Promise.all(
-        batches.map((batch) =>
-          fetch(DEXSCREENER + batch.join(','), { headers: { accept: 'application/json' } })
-            .then((r) => (r.ok ? r.json() : null))
-            .catch(() => null),
-        ),
-      );
-
-      let updated = 0;
-      // One token can have many pools; the deepest is the one that prices it.
-      const deepest = new Map();
-
-      for (const body of responses) {
-        for (const pair of body?.pairs ?? []) {
-          const address = String(pair?.baseToken?.address ?? '').toLowerCase();
-          const id = byAddress.get(address);
-          const price = Number(pair?.priceUsd);
-          const liquidity = Number(pair?.liquidity?.usd ?? 0);
-          if (!id || !Number.isFinite(price) || price <= 0) continue;
-
-          const seen = deepest.get(id);
-          if (!seen || liquidity > seen.liquidity) {
-            deepest.set(id, { price, liquidity, ch24: Number(pair?.priceChange?.h24 ?? 0) });
-          }
-        }
-      }
-
-      for (const [id, best] of deepest) {
-        onUpdate(id, best.price, best.ch24);
-        updated += 1;
-      }
-
-      if (updated > 0) {
-        state.live = true;
-        state.lastOk = Date.now();
-      }
-    } catch {
-      /* a failed poll just means we keep showing the last good price */
-    } finally {
-      if (!state.stopped) state.timer = setTimeout(pollOnce, POLL_MS);
+    const seen = deepest.get(address);
+    if (!seen || liquidity > seen.liquidity) {
+      deepest.set(address, { address, price, liquidity, ch24: Number(pair?.priceChange?.h24 ?? 0) });
     }
   }
+  return [...deepest.values()];
+}
 
-  pollOnce();
+export function parseGeckoTerminal(body) {
+  const deepest = new Map();
+  const rows = Array.isArray(body?.data) ? body.data : [];
+  for (const row of rows) {
+    const a = row?.attributes ?? {};
+    const price = Number(a.base_token_price_usd ?? a.price_usd);
+    const liquidity = Number(a.reserve_in_usd ?? 0);
+    const rawId = row?.relationships?.base_token?.data?.id ?? row?.id ?? '';
+    const address = String(rawId).includes('_')
+      ? String(rawId).split('_').slice(1).join('_').toLowerCase()
+      : String(rawId).toLowerCase();
+    if (!address || !Number.isFinite(price) || price <= 0) continue;
+
+    const seen = deepest.get(address);
+    if (!seen || liquidity > seen.liquidity) {
+      deepest.set(address, {
+        address,
+        price,
+        liquidity,
+        ch24: Number(a.price_change_percentage?.h24 ?? 0),
+      });
+    }
+  }
+  return [...deepest.values()];
+}
+
+function chunk(items, size) {
+  const out = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+export function createPriceFeed(tokens, onUpdate, options = {}) {
+  const { fetchImpl = globalThis.fetch?.bind(globalThis), pollMs = POLL_MS } = options;
+
+  const byAddress = new Map();
+  const networkOf = new Map();
+  for (const [id, token] of Object.entries(tokens)) {
+    const address = token?.dex?.address;
+    if (!address) continue;
+    byAddress.set(address.toLowerCase(), id);
+    networkOf.set(address.toLowerCase(), token.dex.network ?? 'eth');
+  }
+
+  const state = { stopped: false, live: false, lastOk: 0, timer: null, sourceIndex: 0 };
+  if (byAddress.size === 0 || !fetchImpl) {
+    return { stop() {}, isLive: () => false, pollNow: async () => {} };
+  }
+
+  const addresses = [...byAddress.keys()];
+
+  async function trySource(source) {
+    const groups = source.perNetwork
+      ? [...new Set(addresses.map((a) => networkOf.get(a)))].map((network) => ({
+          network,
+          list: addresses.filter((a) => networkOf.get(a) === network),
+        }))
+      : [{ network: null, list: addresses }];
+
+    // Collect first, emit once. A token can appear in more than one batch or
+    // network group, and firing onUpdate twice for the same token in a single
+    // poll would double-count it downstream.
+    const collected = new Map();
+    for (const group of groups) {
+      for (const batch of chunk(group.list, source.batch)) {
+        const res = await fetchImpl(source.url(batch, group.network));
+        if (!res?.ok) throw new Error(`${source.name} ${res?.status ?? 'no response'}`);
+        for (const row of source.parse(await res.json())) {
+          const id = byAddress.get(row.address);
+          if (!id) continue;
+          const seen = collected.get(id);
+          if (!seen || row.liquidity > seen.liquidity) collected.set(id, row);
+        }
+      }
+    }
+    for (const [id, row] of collected) onUpdate(id, row.price, row.ch24);
+    return collected.size;
+  }
+
+  async function pollNow() {
+    if (state.stopped) return;
+    // Start from the source that worked last time, so a persistent block on the
+    // primary costs one failed request per poll, not a permanent freeze.
+    for (let offset = 0; offset < SOURCES.length; offset += 1) {
+      const index = (state.sourceIndex + offset) % SOURCES.length;
+      try {
+        const matched = await trySource(SOURCES[index]);
+        if (matched > 0) {
+          state.sourceIndex = index;
+          state.live = true;
+          state.lastOk = Date.now();
+          return;
+        }
+      } catch {
+        /* try the next source */
+      }
+    }
+    state.live = false;
+  }
+
+  async function loop() {
+    await pollNow();
+    if (!state.stopped) state.timer = setTimeout(loop, pollMs);
+  }
+
+  if (options.autostart !== false) loop();
 
   return {
+    pollNow,
     stop() {
       state.stopped = true;
       clearTimeout(state.timer);
     },
-    isLive: () => state.live && Date.now() - state.lastOk < POLL_MS * 3,
+    isLive: () => state.live && Date.now() - state.lastOk < pollMs * 3,
   };
 }

@@ -1,10 +1,10 @@
 name: Price snapshot
 
-# The whole backend. Hourly is well inside CoinGecko's keyless allowance
-# (24 calls/day) and gives the live board a fresh enough price.
+# The whole backend. Every 10 minutes keeps the board turning over and gives
+# the client a recent floor when a user's browser cannot reach a price source.
 on:
   schedule:
-    - cron: '7 * * * *'
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 permissions:
