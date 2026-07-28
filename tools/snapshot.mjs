@@ -36,6 +36,20 @@ const DEGEN = [
 
 const UNIVERSE = [...MAJORS, ...DEGEN];
 
+/**
+ * CoinGecko id → Binance spot symbol, for the live client-side stream.
+ * Published as data so the client never hard-codes an exchange mapping.
+ */
+const BINANCE = {
+  bitcoin: 'btcusdt', ethereum: 'ethusdt', solana: 'solusdt', ripple: 'xrpusdt',
+  cardano: 'adausdt', 'avalanche-2': 'avaxusdt', chainlink: 'linkusdt', sui: 'suiusdt',
+  aptos: 'aptusdt', near: 'nearusdt', dogecoin: 'dogeusdt', 'shiba-inu': 'shibusdt',
+  pepe: 'pepeusdt', bonk: 'bonkusdt', dogwifcoin: 'wifusdt', floki: 'flokiusdt',
+  popcat: 'popcatusdt', 'book-of-meme': 'bomeusdt',
+  'jupiter-exchange-solana': 'jupusdt', raydium: 'rayusdt', hyperliquid: 'hypeusdt',
+  ethena: 'enausdt', pendle: 'pendleusdt', 'jito-governance-token': 'jtousdt',
+};
+
 const SLATE_MAJORS = 4;
 const SLATE_DEGEN = 6;
 const PICKS_REQUIRED = 5;
@@ -101,6 +115,7 @@ function toSnapshot(markets) {
       mc: m.market_cap ?? null,
       ch24: m.price_change_percentage_24h ?? 0,
       spark: dailyPoints(m.sparkline_in_7d?.price),
+      ws: BINANCE[m.id] ?? null,
     };
   }
   return { ts: new Date().toISOString(), tokens };

@@ -287,3 +287,23 @@ Format: `NNNN — Title` / Date / Status / Decision / Why / Consequences.
 - Variance control moves entirely to season scoring: the season ranks on consistency across daily placements, so one lucky all-in cannot win a month.
 - Daily prizes stay small relative to the season prize for the same reason.
 - `MAX_POSITION_PCT` is retired. `maxSpendOn` now returns available cash.
+
+---
+
+## 0020 — Live prices come from a client-held public exchange socket
+
+**Date:** 2026-07-28 · **Status:** Accepted · **Refines 0007**
+
+**Decision:** The browser opens a public market-data WebSocket directly to an exchange for live prices. Our published snapshot drops to a 5-minute correctness backstop and remains the settlement record.
+
+**Why:** Hourly prices cannot carry a live trading product — the whole appeal is watching the account move. Public market-data streams need no key, no account and no signature, and the connection belongs to the *user's* browser. Ten thousand players is ten thousand connections the exchange absorbs and we never see, so cost stays at $0 and there is no rate limit for us to hit. Nothing we could poll server-side matches that on either latency or cost.
+
+**Why this does not break 0007:** that rule exists so per-user price fetching cannot become a per-user bill. A client-held public socket has no such failure mode — it is free at any scale by construction.
+
+**Consequences:**
+- Settlement is unchanged: prizes are decided against our archived snapshots, never against a price a client claims it saw (DECISIONS 0006). The socket drives the screen, not the payout.
+- Trades record the price they executed at; verification checks it against the archive within tolerance.
+- A live indicator shows when the socket is delivering, so a fallback to snapshot prices is visible rather than silent.
+- Exchange symbol mapping is published as data, so the client hard-codes no exchange.
+- Repaints throttle to ~2/s and pause under an open trade ticket, so the price cannot move mid-decision.
+- Reconnects use backoff; a downed exchange degrades to the snapshot instead of a reconnect storm.

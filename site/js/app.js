@@ -6,6 +6,7 @@ import { intervalReturn, equity } from './bankroll.js';
 import { submitEmail, isValidEmail, storedEmail } from './email.js';
 import { el, $, clear, toast, fmtCountdown } from './ui.js';
 import { drawCard, shareCard } from './share.js';
+import { createPriceFeed } from './prices.js';
 
 import { renderSlate } from './views/slate.js';
 import { renderTrade } from './views/trade.js';
@@ -68,11 +69,46 @@ async function boot() {
   // The countdown ticks every second, but a full re-render at 1Hz would drop
   // taps mid-selection. Patch only the countdown text; refetch prices slowly.
   app.ticker = setInterval(tickCountdowns, 1000);
-  app.poller = setInterval(refreshData, 60000);
+  // The published snapshot is the floor — a slow correctness backstop and the
+  // settlement record. The live socket is what people actually watch.
+  app.poller = setInterval(refreshData, 300000);
+  startLiveFeed();
 
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refreshData();
   });
+}
+
+/**
+ * Live prices straight from a public exchange socket.
+ *
+ * Repaints are throttled to ~2/s: ticks arrive far faster than that and a
+ * render per tick would fight the user for the main thread mid-trade.
+ */
+function startLiveFeed() {
+  let dirty = false;
+
+  app.feed = createPriceFeed(app.data.snapshot.tokens, (id, price) => {
+    const token = app.data.snapshot.tokens[id];
+    if (!token) return;
+    token.price = price;
+    dirty = true;
+  });
+
+  app.repaint = setInterval(() => {
+    if (!dirty) return;
+    dirty = false;
+    // Never repaint under an open ticket — it would move the price the user is
+    // reading mid-decision.
+    if ($('.sheet')) return;
+    render();
+    markLive();
+  }, 500);
+}
+
+function markLive() {
+  const dot = $('#livedot');
+  if (dot) dot.classList.toggle('is-live', Boolean(app.feed?.isLive()));
 }
 
 function tickCountdowns() {
@@ -198,6 +234,7 @@ function render() {
 
   paintDock(handle?.dock?.() ?? null);
   tickCountdowns();
+  markLive();
   maybeShowIntro();
 }
 

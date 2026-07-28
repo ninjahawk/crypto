@@ -727,3 +727,20 @@ table.prize tr:last-child td { border-bottom: 0; }
   padding: 4px;
 }
 .pick-info:active { color: var(--text); }
+
+/* Live-feed indicator. Green and breathing means a socket is delivering
+   ticks; grey means we have fallen back to the published snapshot. */
+.livedot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-3);
+  flex: none;
+  margin-left: 2px;
+  transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.livedot.is-live {
+  background: var(--pos);
+  box-shadow: 0 0 0 3px rgba(47, 214, 113, 0.16);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(47, 214, 113, 0.04); } }
