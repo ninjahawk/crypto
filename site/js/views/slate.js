@@ -1,4 +1,4 @@
-import { el, clear, fmtPct, fmtCompact, toneOf, tokenAvatar, fmtCountdown, toast } from '../ui.js';
+import { el, clear, fmtPct, fmtCompact, fmtAge, toneOf, tokenAvatar, fmtCountdown, toast } from '../ui.js';
 import { lockEntry } from '../state.js';
 import { openTokenSheet } from './token.js';
 
@@ -91,8 +91,10 @@ export function renderSlate(ctx, mount, go, onDraft) {
           ]),
           el('div', { class: `pick-move num ${toneOf(form)}`, text: fmtPct(form) }),
           el('div', { class: 'pick-meta num' }, [
-            el('span', { text: '24h' }),
-            token.mc ? el('span', { text: ` · $${fmtCompact(token.mc)} mc` }) : null,
+            // Age is the headline fact for a launch this new — a nine-hour-old
+            // token is a completely different proposition to a nine-day-old one.
+            el('span', { text: token.ageHours != null ? fmtAge(token.ageHours) : '24h' }),
+            token.liq ? el('span', { text: ` · $${fmtCompact(token.liq)} liq` }) : null,
           ]),
           el('span', { class: 'pick-check', text: '✓' }),
           el('span', {

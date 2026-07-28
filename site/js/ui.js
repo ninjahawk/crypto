@@ -68,6 +68,14 @@ export function toneOf(value, epsilon = 0.005) {
   return value > 0 ? 'pos' : 'neg';
 }
 
+/** How old a launch is. Minutes matter when a token is hours old. */
+export function fmtAge(hours) {
+  if (!Number.isFinite(hours)) return '—';
+  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))}m old`;
+  if (hours < 48) return `${Math.round(hours)}h old`;
+  return `${Math.round(hours / 24)}d old`;
+}
+
 export function fmtCountdown(ms) {
   if (!Number.isFinite(ms) || ms <= 0) return '00:00:00';
   const total = Math.floor(ms / 1000);

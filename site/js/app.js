@@ -88,10 +88,11 @@ async function boot() {
 function startLiveFeed() {
   let dirty = false;
 
-  app.feed = createPriceFeed(app.data.snapshot.tokens, (id, price) => {
+  app.feed = createPriceFeed(app.data.snapshot.tokens, (id, price, ch24) => {
     const token = app.data.snapshot.tokens[id];
     if (!token) return;
     token.price = price;
+    if (Number.isFinite(ch24)) token.ch24 = ch24;
     dirty = true;
   });
 

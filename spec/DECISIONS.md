@@ -307,3 +307,21 @@ Format: `NNNN — Title` / Date / Status / Decision / Why / Consequences.
 - Exchange symbol mapping is published as data, so the client hard-codes no exchange.
 - Repaints throttle to ~2/s and pause under an open trade ticket, so the price cannot move mid-decision.
 - Reconnects use backoff; a downed exchange degrades to the snapshot instead of a reconnect storm.
+
+---
+
+## 0021 — The universe is fresh launches, not blue chips
+
+**Date:** 2026-07-28 · **Status:** Accepted · **Supersedes the curated universe in 0008**
+
+**Decision:** The tradeable universe is newly launched memecoins sourced from DEX pools, filtered for survivability. Bitcoin remains only so the Buy & Hold BTC benchmark ghost can run; it is not tradeable.
+
+**Why:** The appeal is getting in on a new launch without real money at risk — and possibly getting paid for calling it right. A slate of BTC, ETH and LINK is the opposite of that: it is a safe-bets game nobody in this audience wants to play. The volatility *is* the product.
+
+**Consequences:**
+- Sourced from GeckoTerminal's keyless `new_pools` and `trending_pools` across Solana, Base, BSC and Ethereum.
+- **Curation is the editorial job.** Raw new-pool data is overwhelmingly sub-$2k-liquidity rugs and honeypots. Filters require minimum liquidity, 24h volume, transaction count, and an age window of 30 minutes to 21 days, plus a volume-to-liquidity sanity check that catches wash trading. Roughly one pool in ten survives.
+- Live prices move to DexScreener polling, since new launches are on no centralised exchange and have no WebSocket. Same cost model as 0020: the user's browser, the user's IP, free at any scale.
+- Token cards lead with **age** — a nine-hour-old launch is a completely different proposition to a nine-day-old one.
+- Tokens can rug to zero. That is realistic and acceptable in a simulation, but scoring must survive a price going to zero and a pool disappearing.
+- Sponsored tokens must never appear on a slate. That rule matters far more here than it did with blue chips.

@@ -1,171 +1,66 @@
 {
   "contestId": "2026-07-28",
-  "opensAt": "2026-07-28T01:55:03.978Z",
+  "opensAt": "2026-07-28T02:13:47.778Z",
   "closesAt": "2026-07-29T00:00:00.000Z",
   "picksRequired": 5,
   "payingPositions": 3,
   "prizePool": null,
   "prizeTable": [],
   "tokens": [
-    "bitcoin",
-    "ethereum",
-    "chainlink",
-    "cardano",
-    "aptos",
-    "popcat",
-    "shiba-inu",
-    "dogecoin",
-    "hyperliquid",
-    "jupiter-exchange-solana",
-    "pendle"
+    "bsc:0x205812cdbed920aff76c6580abd681a46d11efc7",
+    "bsc:0x277add739c6e0477616948357af9e79fe1ec9b80",
+    "solana:Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump",
+    "solana:Ge87EtsjwRQbHaqQmKRno69RFTwh9bfSsm99XNxTpump",
+    "solana:Dh5GKcPQFBJXw74yP4u7BCHYQzHoG6JX8dXQaNwvpump",
+    "solana:d7737w2iLSTqLxLU1Q7ovrHocWdpkNwJ3E2GLyXpump",
+    "solana:HhqF5NowD4qThZBNDbgYAFvChEpAexSk1Qmu1nCzpump",
+    "solana:HK3igJ6L4MiZZ2zM12Nohu1MGZRzKJvqbpFwz1yopump",
+    "bsc:0x0d6ae45c96ec4df860300087462266e19140f6dc",
+    "solana:5sd8bKraewJNHFg72scxxYXNeLCASVct1gxqi3Xipump"
   ],
   "openPrices": {
-    "bitcoin": 63177,
-    "ethereum": 1874.2,
-    "chainlink": 8.32,
-    "cardano": 0.154181,
-    "aptos": 0.585818,
-    "popcat": 0.04081001,
-    "shiba-inu": 0.00000464,
-    "dogecoin": 0.069628,
-    "hyperliquid": 56.31,
-    "jupiter-exchange-solana": 0.181199,
-    "pendle": 1.5
+    "bsc:0x205812cdbed920aff76c6580abd681a46d11efc7": 679.074554261556,
+    "bsc:0x277add739c6e0477616948357af9e79fe1ec9b80": 0.0895525533480928,
+    "solana:Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump": 0.003456273640938861,
+    "solana:Ge87EtsjwRQbHaqQmKRno69RFTwh9bfSsm99XNxTpump": 0.005959414646509455,
+    "solana:Dh5GKcPQFBJXw74yP4u7BCHYQzHoG6JX8dXQaNwvpump": 0.00009719536813911303,
+    "solana:d7737w2iLSTqLxLU1Q7ovrHocWdpkNwJ3E2GLyXpump": 0.0009406428686334328,
+    "solana:HhqF5NowD4qThZBNDbgYAFvChEpAexSk1Qmu1nCzpump": 0.00029262185129141937,
+    "solana:HK3igJ6L4MiZZ2zM12Nohu1MGZRzKJvqbpFwz1yopump": 0.00025011744670660194,
+    "bsc:0x0d6ae45c96ec4df860300087462266e19140f6dc": 2.77615364642255,
+    "solana:5sd8bKraewJNHFg72scxxYXNeLCASVct1gxqi3Xipump": 0.00042374385485167667
   },
   "openMeta": {
-    "bitcoin": {
-      "ch24": -2.8
+    "bsc:0x205812cdbed920aff76c6580abd681a46d11efc7": {
+      "ch24": -2.12
     },
-    "ethereum": {
-      "ch24": -3.7
+    "bsc:0x277add739c6e0477616948357af9e79fe1ec9b80": {
+      "ch24": -47.742
     },
-    "chainlink": {
-      "ch24": -5.3
+    "solana:Ai66LHZG9MCzg1WKdawwqduVAXpNDUuV8M3uyq5ppump": {
+      "ch24": -52.12
     },
-    "cardano": {
-      "ch24": -6.5
+    "solana:Ge87EtsjwRQbHaqQmKRno69RFTwh9bfSsm99XNxTpump": {
+      "ch24": -13.485
     },
-    "aptos": {
-      "ch24": -5.9
+    "solana:Dh5GKcPQFBJXw74yP4u7BCHYQzHoG6JX8dXQaNwvpump": {
+      "ch24": 201.58
     },
-    "popcat": {
-      "ch24": -6.3
+    "solana:d7737w2iLSTqLxLU1Q7ovrHocWdpkNwJ3E2GLyXpump": {
+      "ch24": 1094.98
     },
-    "shiba-inu": {
-      "ch24": -11.8
+    "solana:HhqF5NowD4qThZBNDbgYAFvChEpAexSk1Qmu1nCzpump": {
+      "ch24": 818.164
     },
-    "dogecoin": {
-      "ch24": -4.6
+    "solana:HK3igJ6L4MiZZ2zM12Nohu1MGZRzKJvqbpFwz1yopump": {
+      "ch24": 69.713
     },
-    "hyperliquid": {
-      "ch24": -5.9
+    "bsc:0x0d6ae45c96ec4df860300087462266e19140f6dc": {
+      "ch24": -21.033
     },
-    "jupiter-exchange-solana": {
-      "ch24": -5.6
-    },
-    "pendle": {
-      "ch24": -4.9
+    "solana:5sd8bKraewJNHFg72scxxYXNeLCASVct1gxqi3Xipump": {
+      "ch24": 2.306
     }
   },
-  "history": {
-    "bitcoin": [
-      66520.982,
-      66077.056,
-      65033.022,
-      64099.004,
-      64316.364,
-      65310.393,
-      63701.353
-    ],
-    "ethereum": [
-      1928.6559,
-      1933.4133,
-      1876.95,
-      1861.2642,
-      1874.0317,
-      1951.7882,
-      1890.4523
-    ],
-    "chainlink": [
-      8.6502848,
-      8.6256194,
-      8.4535647,
-      8.3286462,
-      8.3779377,
-      8.8129674,
-      8.3722507
-    ],
-    "cardano": [
-      0.17354323,
-      0.17438148,
-      0.16781902,
-      0.16385968,
-      0.16478694,
-      0.16572258,
-      0.15544157
-    ],
-    "aptos": [
-      0.60976601,
-      0.62207291,
-      0.6179138,
-      0.60011216,
-      0.61094022,
-      0.62737996,
-      0.59203077
-    ],
-    "popcat": [
-      0.044430926,
-      0.044024247,
-      0.044224267,
-      0.042205293,
-      0.043077843,
-      0.043630121,
-      0.041033313
-    ],
-    "shiba-inu": [
-      0.0000042629584,
-      0.0000042512031,
-      0.0000041348962,
-      0.0000041823223,
-      0.0000048880797,
-      0.000005324383,
-      0.0000048315543
-    ],
-    "dogecoin": [
-      0.073308698,
-      0.072959285,
-      0.069105799,
-      0.069534491,
-      0.071673814,
-      0.073292472,
-      0.070323092
-    ],
-    "hyperliquid": [
-      60.832365,
-      59.358306,
-      57.49322,
-      57.44931,
-      58.100786,
-      59.609975,
-      56.040639
-    ],
-    "jupiter-exchange-solana": [
-      0.19956194,
-      0.19119878,
-      0.1870313,
-      0.18707157,
-      0.18623457,
-      0.19149223,
-      0.18136069
-    ],
-    "pendle": [
-      1.6050758,
-      1.6310889,
-      1.5712533,
-      1.4765959,
-      1.4814078,
-      1.5592568,
-      1.4942649
-    ]
-  }
+  "history": {}
 }

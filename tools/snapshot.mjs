@@ -13,6 +13,7 @@
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { fetchFreshTokens, FILTERS } from './fresh.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DATA = join(ROOT, 'site', 'data');
@@ -151,11 +152,9 @@ function buildSlate(contestId, snapshot) {
   const live = (id) => Boolean(snapshot.tokens[id]);
   const seed = hash(contestId);
 
-  const majors = shuffle(MAJORS.filter(live), seed).slice(0, SLATE_MAJORS);
-  const degen = shuffle(DEGEN.filter(live), seed ^ 0x9e3779b9).slice(0, SLATE_DEGEN);
-  // Bitcoin always rides so Buy & Hold BTC — the benchmark everyone wants to
-  // beat — can always run.
-  const tokens = [...new Set(['bitcoin', ...majors, ...degen])].filter(live);
+  // The slate is the freshest launches, hottest first. No blue chips: the
+  // whole appeal is getting in on a new launch without real money at risk.
+  const tokens = Object.keys(snapshot.tokens).filter((id) => snapshot.tokens[id].fresh);
 
   const openPrices = {};
   const openMeta = {};
@@ -163,7 +162,7 @@ function buildSlate(contestId, snapshot) {
   for (const id of tokens) {
     openPrices[id] = snapshot.tokens[id].price;
     openMeta[id] = { ch24: snapshot.tokens[id].ch24 ?? 0 };
-    if (snapshot.tokens[id].spark) history[id] = snapshot.tokens[id].spark;
+    if (snapshot.tokens[id]?.spark) history[id] = snapshot.tokens[id].spark;
   }
 
   return {
@@ -226,8 +225,32 @@ const writeJSON = (path, value) => writeFileSync(path, `${JSON.stringify(value, 
 async function main() {
   mkdirSync(DATA, { recursive: true });
 
-  const markets = await fetchMarkets(UNIVERSE);
+  // Bitcoin only rides so the Buy & Hold BTC benchmark can run — it is the
+  // number to beat, not part of the tradeable slate (DECISIONS 0021).
+  const markets = await fetchMarkets(['bitcoin']);
   const snapshot = toSnapshot(markets);
+
+  // The actual universe: fresh launches that cleared curation.
+  const fresh = await fetchFreshTokens({ limit: 24 });
+  for (const t of fresh) {
+    snapshot.tokens[t.id] = {
+      id: t.id,
+      sym: t.sym,
+      name: t.name,
+      price: t.price,
+      img: null,
+      mc: t.mc,
+      ch24: t.ch24,
+      ws: null,
+      dex: { network: t.network, address: t.address, pool: t.poolAddress },
+      liq: Math.round(t.liquidity),
+      vol24: Math.round(t.volume),
+      ageHours: Number(t.ageHours.toFixed(1)),
+      fresh: true,
+    };
+  }
+  snapshot.filters = FILTERS;
+  console.log(`fresh launches: ${fresh.length}`);
   if (Object.keys(snapshot.tokens).length === 0) throw new Error('empty snapshot — refusing to publish');
 
   writeJSON(join(DATA, 'snapshot.json'), snapshot);
