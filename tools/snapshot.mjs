@@ -231,21 +231,23 @@ async function main() {
   const snapshot = toSnapshot(markets);
 
   // The actual universe: fresh launches that cleared curation.
-  const fresh = await fetchFreshTokens({ limit: 24 });
+  const fresh = await fetchFreshTokens();
   for (const t of fresh) {
     snapshot.tokens[t.id] = {
       id: t.id,
       sym: t.sym,
       name: t.name,
       price: t.price,
-      img: null,
+      img: t.img ?? null,
       mc: t.mc,
       ch24: t.ch24,
       ws: null,
       dex: { network: t.network, address: t.address, pool: t.poolAddress },
       liq: Math.round(t.liquidity),
       vol24: Math.round(t.volume),
-      ageHours: Number(t.ageHours.toFixed(1)),
+      ageHours: t.ageHours == null ? null : Number(t.ageHours.toFixed(1)),
+      score: Number(t.score.toFixed(3)),
+      txns: t.txns,
       fresh: true,
     };
   }

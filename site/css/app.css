@@ -744,3 +744,16 @@ table.prize tr:last-child td { border-bottom: 0; }
   animation: pulse 2.4s ease-in-out infinite;
 }
 @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(47, 214, 113, 0.04); } }
+
+.ticket-field { display: flex; align-items: baseline; gap: 4px; margin: 18px 0 4px; }
+.ticket-currency { font-size: clamp(30px, 9vw, 40px); font-weight: 850; color: var(--text-3); letter-spacing: -0.04em; }
+.ticket-input {
+  flex: 1; min-width: 0;
+  background: none; border: 0; padding: 0;
+  color: var(--text);
+  font-size: clamp(40px, 13vw, 56px);
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.ticket-input:focus { outline: none; }

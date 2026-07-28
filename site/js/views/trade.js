@@ -24,10 +24,16 @@ export function renderTrade(ctx, mount, go) {
 
   const isClosed = Date.parse(slate.closesAt) <= now;
 
-  // Everything published, biggest first — not just today's slate.
-  const universe = Object.keys(snapshot.tokens).sort(
-    (a, b) => (snapshot.tokens[b].mc ?? 0) - (snapshot.tokens[a].mc ?? 0),
-  );
+  /**
+   * Tradeable universe: fresh launches only, ranked by how hot they are.
+   *
+   * Market cap ordering put bitcoin at the top of a memecoin app, which is
+   * exactly backwards — BTC exists here solely as the benchmark ghost. Ranking
+   * by 24h volume surfaces what people are actually piling into right now.
+   */
+  const universe = Object.keys(snapshot.tokens)
+    .filter((id) => snapshot.tokens[id]?.fresh)
+    .sort((a, b) => (snapshot.tokens[b].score ?? 0) - (snapshot.tokens[a].score ?? 0));
 
   function repaint() {
     clear(mount);
@@ -164,14 +170,31 @@ export function renderTrade(ctx, mount, go) {
     const ceiling = side === 'buy' ? maxSpendOn(book, tokenId, prices) : row?.value ?? 0;
 
     let amount = 0;
-    const amountNode = el('div', { class: 'ticket-amount num', text: usd(0) });
     const hint = el('div', { class: 'ticket-hint num' });
 
-    function setAmount(next) {
+    // A typed dollar amount, because percentage chips alone cannot express
+    // "put $250 on it" — which is how anyone actually sizes a position.
+    const amountInput = el('input', {
+      class: 'ticket-input num',
+      type: 'text',
+      inputmode: 'decimal',
+      autocomplete: 'off',
+      value: '0.00',
+      'aria-label': `Amount in dollars to ${side}`,
+      onInput: (e) => {
+        const raw = e.currentTarget.value.replace(/[^0-9.]/g, '');
+        setAmount(Number(raw) || 0, { fromTyping: true });
+      },
+      onFocus: (e) => e.currentTarget.select(),
+    });
+
+    function setAmount(next, { fromTyping = false } = {}) {
       amount = Math.max(0, Math.min(ceiling, next));
-      amountNode.textContent = usd(amount);
+      if (!fromTyping || next > ceiling) {
+        amountInput.value = amount.toFixed(2);
+      }
       const qty = price > 0 ? amount / price : 0;
-      hint.textContent = `${qty.toLocaleString('en-US', { maximumFractionDigits: 6 })} ${sym} @ ${fmtPrice(price)}`;
+      hint.textContent = `${qty.toLocaleString('en-US', { maximumFractionDigits: 4 })} ${sym} @ ${fmtPrice(price)}`;
     }
     setAmount(0);
 
@@ -213,7 +236,10 @@ export function renderTrade(ctx, mount, go) {
       el('div', { class: 'eyebrow', text: side === 'buy' ? 'Buy' : 'Sell' }),
       el('h2', { style: 'margin:6px 0 2px;font-size:24px;letter-spacing:-0.03em', text: sym }),
       el('div', { class: 'ticket-hint', text: side === 'buy' ? `${usd(ceiling)} available` : `${usd(ceiling)} position` }),
-      amountNode,
+      el('div', { class: 'ticket-field' }, [
+        el('span', { class: 'ticket-currency', text: '$' }),
+        amountInput,
+      ]),
       hint,
       chips,
       confirm,

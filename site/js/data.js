@@ -56,9 +56,14 @@ export async function loadAll() {
  */
 export function closePrices(slate, snapshot) {
   if (slate.settledPrices) return slate.settledPrices;
+  // Every published token, not just the slate — positions and the market list
+  // both reach outside it, and a missing price silently values a holding at 0.
   const out = {};
+  for (const [id, token] of Object.entries(snapshot.tokens)) {
+    if (Number.isFinite(token?.price) && token.price > 0) out[id] = token.price;
+  }
   for (const id of slate.tokens) {
-    out[id] = snapshot.tokens[id]?.price ?? slate.openPrices[id];
+    if (out[id] == null) out[id] = slate.openPrices[id];
   }
   return out;
 }
