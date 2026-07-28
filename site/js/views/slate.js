@@ -8,27 +8,29 @@ import { lockEntry } from '../state.js';
  * (DECISIONS 0010). So it loads straight into a tappable slate — no wall,
  * no tour, no account.
  */
-export function renderSlate(ctx, mount, onChange) {
+export function renderSlate(ctx, mount, go, onDraft) {
   const { slate, snapshot, entry, now } = ctx;
   clear(mount);
 
   const locked = Boolean(entry);
-  const selected = new Set(entry?.picks ?? ctx.draft ?? []);
   const need = slate.picksRequired;
+  const selected = new Set(locked ? entry.picks : ctx.draft ?? []);
   const closesIn = Date.parse(slate.closesAt) - now;
   const urgent = closesIn < 60 * 60 * 1000;
 
-  const head = el('div', { class: 'section-head' }, [
-    el('div', {}, [
-      el('div', { class: 'eyebrow', text: locked ? 'Your picks' : "Today's slate" }),
-      el('h2', { text: locked ? 'Locked in' : `Pick ${need}` }),
+  mount.append(
+    el('div', { class: 'section-head' }, [
+      el('div', {}, [
+        el('div', { class: 'eyebrow', text: locked ? 'Your picks' : "Today's slate" }),
+        el('h2', { text: locked ? 'Locked in' : `Pick ${need}` }),
+      ]),
+      el('span', {
+        class: `countdown-pill num ${urgent ? 'is-urgent' : ''}`,
+        'data-countdown': slate.closesAt,
+        text: closesIn > 0 ? `⏱ ${fmtCountdown(closesIn)}` : 'Closed',
+      }),
     ]),
-    el('span', {
-      class: `countdown-pill num ${urgent ? 'is-urgent' : ''}`,
-      text: closesIn > 0 ? `⏱ ${fmtCountdown(closesIn)}` : 'Closed',
-    }),
-  ]);
-  mount.append(head);
+  );
 
   if (!locked) {
     mount.append(
@@ -41,89 +43,87 @@ export function renderSlate(ctx, mount, onChange) {
   }
 
   const grid = el('div', { class: 'pickgrid' });
+  mount.append(grid);
 
-  for (const id of slate.tokens) {
-    const token = snapshot.tokens[id];
-    if (!token) continue;
+  /**
+   * Repaint only the grid on each toggle. A full view re-render would drop
+   * taps mid-selection, which is the one interaction we cannot afford to lose.
+   */
+  function paintGrid() {
+    clear(grid);
+    for (const id of slate.tokens) {
+      const token = snapshot.tokens[id];
+      if (!token) continue;
 
-    const openPrice = slate.openPrices[id];
-    const livePrice = token.price;
-    const move = openPrice > 0 ? ((livePrice - openPrice) / openPrice) * 100 : 0;
-    const isOn = selected.has(id);
-    const atLimit = selected.size >= need && !isOn;
+      const openPrice = slate.openPrices[id];
+      const move = openPrice > 0 ? ((token.price - openPrice) / openPrice) * 100 : 0;
+      const isOn = selected.has(id);
+      const atLimit = selected.size >= need && !isOn;
 
-    const card = el(
-      'button',
-      {
-        class: 'pick',
-        type: 'button',
-        'aria-pressed': isOn ? 'true' : 'false',
-        disabled: locked || (atLimit && !isOn),
-        onClick: () => {
-          if (locked) return;
-          if (isOn) selected.delete(id);
-          else if (selected.size < need) selected.add(id);
-          onChange([...selected]);
-        },
-      },
-      [
-        el('div', { class: 'pick-top' }, [
-          tokenAvatar(token, 34),
-          // Real crowd data, not a fabricated count. Makes the board feel
-          // busy without ever revealing our field size (DECISIONS 0004).
-          token.picks != null
-            ? el('span', { class: 'pick-heat', text: `🔥 ${fmtCompact(token.picks)}` })
-            : null,
+      grid.append(
+        el('button', {
+          class: 'pick',
+          type: 'button',
+          'aria-pressed': isOn ? 'true' : 'false',
+          'aria-label': `${token.name ?? id}, ${fmtPct(move)}${isOn ? ', selected' : ''}`,
+          disabled: locked || atLimit,
+          onClick: () => {
+            if (locked) return;
+            if (isOn) selected.delete(id);
+            else if (selected.size < need) selected.add(id);
+            paintGrid();
+            onDraft?.([...selected]);
+          },
+        }, [
+          el('div', { class: 'pick-top' }, [
+            tokenAvatar(token, 34),
+            // Real crowd data, not a fabricated count. Makes the board feel
+            // busy without ever revealing our field size (DECISIONS 0004).
+            token.picks != null ? el('span', { class: 'pick-heat', text: `🔥 ${fmtCompact(token.picks)}` }) : null,
+          ]),
+          el('div', { class: 'pick-sym', text: token.sym?.toUpperCase() ?? id }),
+          el('div', { class: 'pick-name', text: token.name ?? '' }),
+          el('div', { class: `pick-move num ${toneOf(move)}`, text: fmtPct(move) }),
+          el('div', { class: 'pick-meta num', text: token.mc ? `$${fmtCompact(token.mc)} mc` : '' }),
+          el('span', { class: 'pick-check', text: '✓' }),
         ]),
-        el('div', { class: 'pick-sym', text: token.sym?.toUpperCase() ?? id }),
-        el('div', { class: 'pick-name', text: token.name ?? '' }),
-        el('div', { class: `pick-move num ${toneOf(move)}`, text: fmtPct(move) }),
-        el('div', { class: 'pick-meta num', text: token.mc ? `$${fmtCompact(token.mc)} mc` : '' }),
-        el('span', { class: 'pick-check', text: '✓' }),
-      ],
-    );
-    grid.append(card);
+      );
+    }
   }
 
-  mount.append(grid);
+  paintGrid();
 
   if (locked) {
     mount.append(
       el('div', { class: 'notice', style: 'margin-top:16px' }, [
         el('span', { class: 'notice-icon', text: '🔒' }),
-        el('div', {
-          html: 'Your picks are locked for this contest. New slate at <b>00:00 UTC</b>.',
-        }),
+        el('div', { html: 'Your picks are locked for this contest. New slate at <b>00:00 UTC</b>.' }),
       ]),
     );
   }
 
-  return {
-    dock(selectedIds, refresh) {
-      if (locked) {
-        return el('button', {
-          class: 'btn is-quiet',
-          text: 'View my contest →',
-          onClick: () => refresh('contest'),
-        });
-      }
-      const count = selectedIds.length;
-      const ready = count === need;
-      return el('button', {
-        class: `btn ${ready ? 'is-lime' : ''}`,
-        disabled: !ready,
-        text: ready ? `Lock in ${need} picks` : `Pick ${need - count} more`,
-        onClick: () => {
-          if (!ready) return;
-          try {
-            lockEntry(slate.contestId, selectedIds, new Date(now).toISOString());
-            toast('Locked in. Good luck.');
-            refresh('contest');
-          } catch (err) {
-            toast(err.message);
-          }
-        },
-      });
-    },
-  };
+  function dock() {
+    if (locked) {
+      return el('button', { class: 'btn is-quiet', text: 'View my contest →', onClick: () => go('contest') });
+    }
+    const count = selected.size;
+    const ready = count === need;
+    return el('button', {
+      class: `btn ${ready ? 'is-lime' : ''}`,
+      disabled: !ready,
+      text: ready ? `Lock in ${need} picks` : `Pick ${need - count} more`,
+      onClick: () => {
+        if (!ready) return;
+        try {
+          lockEntry(slate.contestId, [...selected], new Date(now).toISOString());
+          toast('Locked in. Good luck.');
+          go('contest');
+        } catch (err) {
+          toast(err.message);
+        }
+      },
+    });
+  }
+
+  return { dock };
 }

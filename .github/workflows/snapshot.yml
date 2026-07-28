@@ -1,0 +1,43 @@
+name: Price snapshot
+
+# The whole backend. Hourly is well inside CoinGecko's keyless allowance
+# (24 calls/day) and gives the live board a fresh enough price.
+on:
+  schedule:
+    - cron: '7 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapshot
+  cancel-in-progress: false
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Fetch prices and roll the slate
+        run: node tools/snapshot.mjs
+
+      - name: Verify scoring still reproduces the fixtures
+        run: node --test "verify/*.test.mjs"
+
+      - name: Commit published data
+        run: |
+          git config user.name  "cutline-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add site/data
+          if git diff --staged --quiet; then
+            echo "no change"
+            exit 0
+          fi
+          git commit -m "data: snapshot $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push

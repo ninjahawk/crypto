@@ -1,0 +1,70 @@
+{
+  "contestId": "2026-07-28",
+  "opensAt": "2026-07-28T00:00:00.000Z",
+  "closesAt": "2026-07-29T00:00:00.000Z",
+  "picksRequired": 5,
+  "payingPositions": 3,
+  "prizePool": null,
+  "prizeTable": [],
+  "tokens": [
+    "bitcoin",
+    "ethereum",
+    "chainlink",
+    "cardano",
+    "aptos",
+    "popcat",
+    "shiba-inu",
+    "dogecoin",
+    "hyperliquid",
+    "jupiter-exchange-solana",
+    "pendle"
+  ],
+  "openPrices": {
+    "bitcoin": 63133,
+    "ethereum": 1871.94,
+    "chainlink": 8.31,
+    "cardano": 0.154421,
+    "aptos": 0.58662,
+    "popcat": 0.04068796,
+    "shiba-inu": 0.00000466,
+    "dogecoin": 0.06948,
+    "hyperliquid": 55.77,
+    "jupiter-exchange-solana": 0.18055,
+    "pendle": 1.48
+  },
+  "openMeta": {
+    "bitcoin": {
+      "ch24": -2.8
+    },
+    "ethereum": {
+      "ch24": -3.7
+    },
+    "chainlink": {
+      "ch24": -5.3
+    },
+    "cardano": {
+      "ch24": -6.5
+    },
+    "aptos": {
+      "ch24": -5.9
+    },
+    "popcat": {
+      "ch24": -6.3
+    },
+    "shiba-inu": {
+      "ch24": -11.8
+    },
+    "dogecoin": {
+      "ch24": -4.6
+    },
+    "hyperliquid": {
+      "ch24": -5.9
+    },
+    "jupiter-exchange-solana": {
+      "ch24": -5.6
+    },
+    "pendle": {
+      "ch24": -4.9
+    }
+  }
+}

@@ -68,6 +68,7 @@ export function renderContest(ctx, mount, go) {
       el('div', { style: 'margin-left:auto' }, [
         el('span', {
           class: `countdown-pill num ${urgent ? 'is-urgent' : ''}`,
+          'data-countdown': isClosed ? null : slate.closesAt,
           text: isClosed ? 'Settled' : `⏱ ${fmtCountdown(closesIn)}`,
         }),
       ]),
