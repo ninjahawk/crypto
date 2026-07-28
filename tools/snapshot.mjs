@@ -131,7 +131,10 @@ function buildSlate(contestId, snapshot) {
 
   return {
     contestId,
-    opensAt: `${contestId}T00:00:00.000Z`,
+    // The real moment the open prices were taken, not an idealised midnight.
+    // If the first run of the day happens at 13:00, these are 13:00 prices and
+    // the record has to say so — a verifier replays against this timestamp.
+    opensAt: snapshot.ts,
     closesAt: `${utcDate(new Date(Date.parse(`${contestId}T00:00:00Z`) + 86400000))}T00:00:00.000Z`,
     picksRequired: PICKS_REQUIRED,
     payingPositions: PAYING_POSITIONS,

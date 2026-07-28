@@ -94,17 +94,20 @@ export function animateNumber(node, to, render, duration = 700) {
   requestAnimationFrame(frame);
 }
 
+/**
+ * Token avatar with a bulletproof fallback: the ticker is always rendered
+ * underneath and the image layers on top. A failed remote image then degrades
+ * to readable text with no error handler needing to fire — which matters,
+ * because a grid of blank circles reads as broken.
+ */
 export function tokenAvatar(token, size = 40) {
-  const wrap = el('span', { class: 'avatar', style: `--size:${size}px` });
+  const wrap = el('span', { class: 'avatar', style: `--size:${size}px` }, [
+    el('span', { class: 'avatar-fallback', text: (token?.sym ?? '?').slice(0, 4).toUpperCase() }),
+  ]);
   if (token?.img) {
     const img = el('img', { src: token.img, alt: '', loading: 'lazy', decoding: 'async' });
-    img.addEventListener('error', () => {
-      img.remove();
-      wrap.append(el('span', { class: 'avatar-fallback', text: (token.sym ?? '?').slice(0, 3) }));
-    });
+    img.addEventListener('error', () => img.remove());
     wrap.append(img);
-  } else {
-    wrap.append(el('span', { class: 'avatar-fallback', text: (token?.sym ?? '?').slice(0, 3) }));
   }
   return wrap;
 }

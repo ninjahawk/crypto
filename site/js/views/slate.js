@@ -55,8 +55,11 @@ export function renderSlate(ctx, mount, go, onDraft) {
       const token = snapshot.tokens[id];
       if (!token) continue;
 
-      const openPrice = slate.openPrices[id];
-      const move = openPrice > 0 ? ((token.price - openPrice) / openPrice) * 100 : 0;
+      // The hero number is prior-24h form, not movement since open.
+      // Form is what you actually pick on, and at contest open every
+      // since-open figure is 0.00% — a dead board at the exact moment
+      // someone is deciding whether this thing is alive.
+      const form = token.ch24 ?? 0;
       const isOn = selected.has(id);
       const atLimit = selected.size >= need && !isOn;
 
@@ -65,7 +68,7 @@ export function renderSlate(ctx, mount, go, onDraft) {
           class: 'pick',
           type: 'button',
           'aria-pressed': isOn ? 'true' : 'false',
-          'aria-label': `${token.name ?? id}, ${fmtPct(move)}${isOn ? ', selected' : ''}`,
+          'aria-label': `${token.name ?? id}, ${fmtPct(form)} in 24 hours${isOn ? ', selected' : ''}`,
           disabled: locked || atLimit,
           onClick: () => {
             if (locked) return;
@@ -76,15 +79,20 @@ export function renderSlate(ctx, mount, go, onDraft) {
           },
         }, [
           el('div', { class: 'pick-top' }, [
-            tokenAvatar(token, 34),
+            tokenAvatar(token, 30),
+            el('div', { style: 'min-width:0;flex:1' }, [
+              el('div', { class: 'pick-sym', text: token.sym?.toUpperCase() ?? id }),
+              el('div', { class: 'pick-name', text: token.name ?? '' }),
+            ]),
             // Real crowd data, not a fabricated count. Makes the board feel
             // busy without ever revealing our field size (DECISIONS 0004).
             token.picks != null ? el('span', { class: 'pick-heat', text: `🔥 ${fmtCompact(token.picks)}` }) : null,
           ]),
-          el('div', { class: 'pick-sym', text: token.sym?.toUpperCase() ?? id }),
-          el('div', { class: 'pick-name', text: token.name ?? '' }),
-          el('div', { class: `pick-move num ${toneOf(move)}`, text: fmtPct(move) }),
-          el('div', { class: 'pick-meta num', text: token.mc ? `$${fmtCompact(token.mc)} mc` : '' }),
+          el('div', { class: `pick-move num ${toneOf(form)}`, text: fmtPct(form) }),
+          el('div', { class: 'pick-meta num' }, [
+            el('span', { text: '24h' }),
+            token.mc ? el('span', { text: ` · $${fmtCompact(token.mc)} mc` }) : null,
+          ]),
           el('span', { class: 'pick-check', text: '✓' }),
         ]),
       );

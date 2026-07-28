@@ -101,38 +101,48 @@ export function lockEntry(contestId, picks, nowISO) {
   });
 }
 
+export const FREEZES_PER_MONTH = 1;
+
 /**
- * Streak, with a monthly freeze.
+ * Streak transition — pure, so it can be tested without a browser.
  *
- * The freeze is not generosity — Duolingo found that letting people equip
- * freezes *raised* daily actives. A streak that can only ever be lost stops
- * being motivating the moment it breaks.
+ * The freeze is not generosity. Letting people carry a streak through one
+ * missed day measurably raises daily actives, because a streak that can only
+ * ever be lost stops motivating the moment it breaks. Nobody plays every day.
+ *
+ * `streak` is `{ count, lastPlayed, freezesUsed, freezeMonth }`.
+ * `todayId` is a contest id, which is a YYYY-MM-DD date.
  */
-function bumpStreak(s, contestId) {
-  const today = contestId; // contest ids are YYYY-MM-DD, one per day
-  const { lastPlayed } = s.streak;
-  if (lastPlayed === today) return;
+export function nextStreak(streak, todayId) {
+  if (streak.lastPlayed === todayId) return { ...streak };
 
-  const month = today.slice(0, 7);
-  if (s.streak.freezeMonth !== month) {
-    s.streak.freezeMonth = month;
-    s.streak.freezesUsed = 0;
-  }
+  const month = todayId.slice(0, 7);
+  const rolledOver = streak.freezeMonth !== month;
+  const freezesUsed = rolledOver ? 0 : streak.freezesUsed;
 
-  if (!lastPlayed) {
-    s.streak.count = 1;
+  let count;
+  let spent = freezesUsed;
+
+  if (!streak.lastPlayed) {
+    count = 1;
   } else {
-    const gap = dayGap(lastPlayed, today);
+    const gap = dayGap(streak.lastPlayed, todayId);
     if (gap === 1) {
-      s.streak.count += 1;
-    } else if (gap === 2 && s.streak.freezesUsed < 1) {
-      s.streak.freezesUsed += 1;
-      s.streak.count += 1;
+      count = streak.count + 1;
+    } else if (gap === 2 && freezesUsed < FREEZES_PER_MONTH) {
+      // Exactly one day missed and a freeze available — the run survives.
+      count = streak.count + 1;
+      spent = freezesUsed + 1;
     } else {
-      s.streak.count = 1;
+      count = 1;
     }
   }
-  s.streak.lastPlayed = today;
+
+  return { count, lastPlayed: todayId, freezesUsed: spent, freezeMonth: month };
+}
+
+function bumpStreak(s, contestId) {
+  s.streak = nextStreak(s.streak, contestId);
 }
 
 function dayGap(fromISODate, toISODate) {

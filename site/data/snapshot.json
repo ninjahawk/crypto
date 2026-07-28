@@ -1,40 +1,40 @@
 {
-  "ts": "2026-07-28T01:15:52.500Z",
+  "ts": "2026-07-28T01:20:33.152Z",
   "tokens": {
     "bitcoin": {
       "id": "bitcoin",
       "sym": "btc",
       "name": "Bitcoin",
-      "price": 63133,
+      "price": 63132,
       "img": "https://coin-images.coingecko.com/coins/images/1/large/bitcoin.png?1696501400",
-      "mc": 1266573944529,
+      "mc": 1266437304969,
       "ch24": -2.8
     },
     "ethereum": {
       "id": "ethereum",
       "sym": "eth",
       "name": "Ethereum",
-      "price": 1871.94,
+      "price": 1870.69,
       "img": "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
-      "mc": 225910445093,
+      "mc": 225783899124,
       "ch24": -3.7
     },
     "ripple": {
       "id": "ripple",
       "sym": "xrp",
       "name": "XRP",
-      "price": 1.057,
+      "price": 1.056,
       "img": "https://coin-images.coingecko.com/coins/images/44/large/xrp-symbol-white-128.png?1696501442",
-      "mc": 66096512749,
+      "mc": 66019701936,
       "ch24": -4.7
     },
     "solana": {
       "id": "solana",
       "sym": "sol",
       "name": "Solana",
-      "price": 73.15,
+      "price": 73.02,
       "img": "https://coin-images.coingecko.com/coins/images/4128/large/solana.png?1718769756",
-      "mc": 42652118902,
+      "mc": 42576212981,
       "ch24": -3.8
     },
     "hyperliquid": {
@@ -43,70 +43,70 @@
       "name": "Hyperliquid",
       "price": 55.77,
       "img": "https://coin-images.coingecko.com/coins/images/50882/large/hyperliquid.jpg?1729431300",
-      "mc": 12405335502,
+      "mc": 12407490866,
       "ch24": -5.9
     },
     "dogecoin": {
       "id": "dogecoin",
       "sym": "doge",
       "name": "Dogecoin",
-      "price": 0.06948,
+      "price": 0.069444,
       "img": "https://coin-images.coingecko.com/coins/images/5/large/dogecoin.png?1696501409",
-      "mc": 10786824270,
+      "mc": 10781592651,
       "ch24": -4.6
     },
     "chainlink": {
       "id": "chainlink",
       "sym": "link",
       "name": "Chainlink",
-      "price": 8.31,
+      "price": 8.29,
       "img": "https://coin-images.coingecko.com/coins/images/877/large/Chainlink_Logo_500.png?1760023405",
-      "mc": 6214867595,
+      "mc": 6207536550,
       "ch24": -5.3
     },
     "cardano": {
       "id": "cardano",
       "sym": "ada",
       "name": "Cardano",
-      "price": 0.154421,
+      "price": 0.154169,
       "img": "https://coin-images.coingecko.com/coins/images/975/large/cardano.png?1696502090",
-      "mc": 5759939167,
+      "mc": 5749367191,
       "ch24": -6.5
     },
     "avalanche-2": {
       "id": "avalanche-2",
       "sym": "avax",
       "name": "Avalanche",
-      "price": 6.39,
+      "price": 6.38,
       "img": "https://coin-images.coingecko.com/coins/images/12559/large/Avalanche_Circle_RedWhite_Trans.png?1696512369",
-      "mc": 2759710461,
+      "mc": 2753957519,
       "ch24": -4.5
-    },
-    "shiba-inu": {
-      "id": "shiba-inu",
-      "sym": "shib",
-      "name": "Shiba Inu",
-      "price": 0.00000466,
-      "img": "https://coin-images.coingecko.com/coins/images/11939/large/shiba.png?1696511800",
-      "mc": 2748453238,
-      "ch24": -11.8
     },
     "sui": {
       "id": "sui",
       "sym": "sui",
       "name": "Sui",
-      "price": 0.677658,
+      "price": 0.676787,
       "img": "https://coin-images.coingecko.com/coins/images/26375/large/sui-ocean-square.png?1727791290",
-      "mc": 2746091354,
+      "mc": 2742568998,
       "ch24": -5.8
+    },
+    "shiba-inu": {
+      "id": "shiba-inu",
+      "sym": "shib",
+      "name": "Shiba Inu",
+      "price": 0.00000465,
+      "img": "https://coin-images.coingecko.com/coins/images/11939/large/shiba.png?1696511800",
+      "mc": 2740814152,
+      "ch24": -11.8
     },
     "near": {
       "id": "near",
       "sym": "near",
       "name": "NEAR Protocol",
-      "price": 1.68,
+      "price": 1.67,
       "img": "https://coin-images.coingecko.com/coins/images/10365/large/near.jpg?1696510367",
-      "mc": 2181623875,
+      "mc": 2175143183,
       "ch24": -8.1
     },
     "pepe": {
@@ -115,43 +115,43 @@
       "name": "Pepe",
       "price": 0.00000278,
       "img": "https://coin-images.coingecko.com/coins/images/29850/large/pepe-token.jpeg?1696528776",
-      "mc": 1170288440,
+      "mc": 1167668013,
       "ch24": -6
     },
     "ethena": {
       "id": "ethena",
       "sym": "ena",
       "name": "Ethena",
-      "price": 0.082106,
+      "price": 0.082203,
       "img": "https://coin-images.coingecko.com/coins/images/36530/large/ethena.png?1711701436",
-      "mc": 785009186,
+      "mc": 786013436,
       "ch24": -8.4
     },
     "jupiter-exchange-solana": {
       "id": "jupiter-exchange-solana",
       "sym": "jup",
       "name": "Jupiter",
-      "price": 0.18055,
+      "price": 0.180539,
       "img": "https://coin-images.coingecko.com/coins/images/34188/large/jup.png?1704266489",
-      "mc": 599482713,
+      "mc": 599596988,
       "ch24": -5.6
     },
     "aptos": {
       "id": "aptos",
       "sym": "apt",
       "name": "Aptos",
-      "price": 0.58662,
+      "price": 0.585359,
       "img": "https://coin-images.coingecko.com/coins/images/26455/large/Aptos-Network-Symbol-Black-RGB-1x.png?1761789140",
-      "mc": 495838081,
+      "mc": 494847527,
       "ch24": -5.9
     },
     "jito-governance-token": {
       "id": "jito-governance-token",
       "sym": "jto",
       "name": "Jito",
-      "price": 0.563607,
+      "price": 0.561166,
       "img": "https://coin-images.coingecko.com/coins/images/33228/large/jto.png?1701137022",
-      "mc": 283746333,
+      "mc": 282512397,
       "ch24": -2.2
     },
     "bonk": {
@@ -160,7 +160,7 @@
       "name": "Bonk",
       "price": 0.00000291,
       "img": "https://coin-images.coingecko.com/coins/images/28600/large/bonk.jpg?1696527587",
-      "mc": 256013501,
+      "mc": 256107221,
       "ch24": -5.9
     },
     "pendle": {
@@ -169,52 +169,52 @@
       "name": "Pendle",
       "price": 1.48,
       "img": "https://coin-images.coingecko.com/coins/images/15069/large/Pendle_Logo_Normal-03.png?1696514728",
-      "mc": 253692549,
+      "mc": 253473931,
       "ch24": -4.9
     },
     "floki": {
       "id": "floki",
       "sym": "floki",
       "name": "FLOKI",
-      "price": 0.00002056,
+      "price": 0.00002055,
       "img": "https://coin-images.coingecko.com/coins/images/16746/large/PNG_image.png?1696516318",
-      "mc": 198354845,
+      "mc": 198309727,
       "ch24": -7.7
     },
     "raydium": {
       "id": "raydium",
       "sym": "ray",
       "name": "Raydium",
-      "price": 0.596862,
+      "price": 0.594173,
       "img": "https://coin-images.coingecko.com/coins/images/13928/large/PSigc4ie_400x400.jpg?1696513668",
-      "mc": 160743104,
+      "mc": 160038639,
       "ch24": -5.9
     },
     "dogwifcoin": {
       "id": "dogwifcoin",
       "sym": "wif",
       "name": "dogwifhat",
-      "price": 0.14861,
+      "price": 0.148067,
       "img": "https://coin-images.coingecko.com/coins/images/33566/large/dogwifhat.jpg?1702499428",
-      "mc": 148449776,
+      "mc": 147850969,
       "ch24": -2.8
     },
     "popcat": {
       "id": "popcat",
       "sym": "popcat",
       "name": "Popcat",
-      "price": 0.04068796,
+      "price": 0.04063306,
       "img": "https://coin-images.coingecko.com/coins/images/33760/large/image.jpg?1702964227",
-      "mc": 39873310,
+      "mc": 39787829,
       "ch24": -6.3
     },
     "book-of-meme": {
       "id": "book-of-meme",
       "sym": "bome",
       "name": "BOOK OF MEME",
-      "price": 0.00052268,
+      "price": 0.00052312,
       "img": "https://coin-images.coingecko.com/coins/images/36071/large/bome.png?1710407255",
-      "mc": 36064431,
+      "mc": 36140945,
       "ch24": -1.6
     }
   }
