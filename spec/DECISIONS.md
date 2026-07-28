@@ -227,3 +227,30 @@ Format: `NNNN — Title` / Date / Status / Decision / Why / Consequences.
 **Why:** Both PrizePicks and Underdog are fully browsable logged out, with only a persistent Sign Up chip in the corner; PrizePicks offers an explicit "View board" escape on its very first screen. Deferred signup is standard practice in this category, not a risk. Robinhood's hard wall is the outlier and rests on brand permission we do not have.
 
 **Consequences:** Onboarding follows Phantom's pattern — a short skippable interest picker with large tappable cards and progress dots — placed *after* first picks, not before.
+
+---
+
+## 0016 — Founding season runs against algorithms only, and says so
+
+**Date:** 2026-07-28 · **Status:** Accepted
+
+**Decision:** Web v1 ships with no accounts and no human opponents. The board carries the five algorithmic ghosts and the local player. Copy on the board states plainly that every opponent is a bot, that bots cannot win prizes, and that human leagues open when accounts launch.
+
+**Why:** A static site has no shared state, so human leagues are not possible until Supabase is wired (0001). The alternative — implying humans are present — is exactly what 0004 forbids. Racing the algorithms is a real product on its own: beating Buy & Hold BTC is a genuine result and a better screenshot than a rank.
+
+**Consequences:**
+- No prize contests run until the pool is funded; the rules screen carries a visible founding-season banner saying so (0005).
+- `token.picks` (the 🔥 crowd count) stays absent from published data until real pick counts exist. The UI renders it only when present, so nothing is fabricated.
+- Local results accumulate as a founding record and migrate to an account later.
+
+---
+
+## 0017 — Prior-24h form is the hero number on a pick card
+
+**Date:** 2026-07-28 · **Status:** Accepted
+
+**Decision:** Pick cards lead with the token's prior-24h change, not its movement since contest open. Movement since open leads on the contest screen instead.
+
+**Why:** Form is the decision-relevant number when choosing — it is what the reference pick'em apps put in the hero slot. Movement-since-open is also exactly 0.00% for every token at contest open, which is the precise moment a new arrival is deciding whether the product is alive.
+
+**Consequences:** The two screens answer different questions — the slate answers "what should I pick", the contest answers "how am I doing" — and neither ever renders a dead board.
