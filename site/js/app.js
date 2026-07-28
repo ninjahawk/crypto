@@ -1,11 +1,13 @@
 import { loadAll, closePrices as computeClosePrices, openMeta } from './data.js';
 import { scoreContest, cutLine } from './scoring.js';
 import { buildGhosts } from './ghosts.js';
-import { getState, ensurePlayer, entryFor, setInterests, dismissIntro, recordResult } from './state.js';
+import { getState, ensurePlayer, entryFor, setInterests, setEmail, dismissIntro, recordResult } from './state.js';
+import { submitEmail, isValidEmail, storedEmail } from './email.js';
 import { el, $, clear, toast, fmtCountdown } from './ui.js';
 import { drawCard, shareCard } from './share.js';
 
 import { renderSlate } from './views/slate.js';
+import { renderTrade } from './views/trade.js';
 import { renderContest } from './views/contest.js';
 import { renderBoard } from './views/board.js';
 import { renderSeason } from './views/season.js';
@@ -13,6 +15,7 @@ import { renderRules } from './views/rules.js';
 
 const TABS = [
   { id: 'contest', label: 'Contest' },
+  { id: 'trade', label: 'Trade' },
   { id: 'slate', label: 'Slate' },
   { id: 'board', label: 'Board' },
   { id: 'season', label: 'Season' },
@@ -21,6 +24,7 @@ const TABS = [
 
 const RENDERERS = {
   slate: renderSlate,
+  trade: renderTrade,
   contest: renderContest,
   board: renderBoard,
   season: renderSeason,
@@ -214,6 +218,8 @@ function maybeShowIntro() {
 
 function showIntro() {
   const chosen = new Set();
+  const contestId = app.data.slate.contestId;
+  const entry = entryFor(contestId);
 
   const options = INTERESTS.map((item) =>
     el('button', {
@@ -233,24 +239,59 @@ function showIntro() {
     ]),
   );
 
+  // The ask is concrete — an address for a result, not "updates". It lands
+  // here because this is the moment the player has something they want the
+  // outcome of, which is the only time this exchange is honest.
+  const input = el('input', {
+    class: 'field',
+    type: 'email',
+    inputmode: 'email',
+    autocomplete: 'email',
+    placeholder: 'you@email.com',
+    value: storedEmail() ?? '',
+  });
+
+  const submit = el('button', {
+    class: 'btn is-lime',
+    text: 'Send me my result',
+    onClick: async (e) => {
+      const btn = e.currentTarget;
+      const address = input.value.trim();
+      if (!isValidEmail(address)) {
+        input.classList.add('is-bad');
+        return toast('That address does not look right');
+      }
+      btn.disabled = true;
+      const res = await submitEmail(address, app.data.config, {
+        contestId,
+        picks: entry?.picks ?? null,
+      });
+      btn.disabled = false;
+      setInterests([...chosen]);
+      setEmail(address);
+      closeSheet();
+      toast(res.message);
+    },
+  });
+
   openSheet([
-    el('div', { class: 'eyebrow', text: 'One quick thing' }),
-    el('h2', { style: 'margin:6px 0 4px;font-size:24px;letter-spacing:-0.03em', text: "You're in." }),
-    el('p', { class: 'prose', style: 'margin:0 0 18px', text: 'What brings you here? Pick any that fit — it shapes your slate.' }),
-    ...options,
-    el('div', { style: 'margin-top:18px' }, [
-      el('button', {
-        class: 'btn',
-        text: 'Continue',
-        onClick: () => {
-          setInterests([...chosen]);
-          closeSheet();
-          toast('See you at 00:00 UTC for the next slate.');
-        },
-      }),
+    el('div', { class: 'eyebrow', text: "You're in" }),
+    el('h2', { style: 'margin:6px 0 4px;font-size:26px;letter-spacing:-0.03em', text: '$10,000 deployed.' }),
+    el('p', { class: 'prose', style: 'margin:0 0 16px' }, [
+      'Contest settles at ',
+      el('b', { text: '00:00 UTC' }),
+      '. Drop your email and we\'ll send you where you finished.',
     ]),
-    el('div', { style: 'text-align:center;margin-top:12px' }, [
-      el('button', { class: 'linkbtn', text: 'Skip', onClick: () => { dismissIntro(); closeSheet(); } }),
+    input,
+    el('div', { style: 'margin-top:12px' }, [submit]),
+    el('div', { class: 'eyebrow', style: 'margin:22px 0 10px', text: 'What are you here for?' }),
+    ...options,
+    el('div', { style: 'text-align:center;margin-top:14px' }, [
+      el('button', {
+        class: 'linkbtn',
+        text: 'Skip for now',
+        onClick: () => { setInterests([...chosen]); dismissIntro(); closeSheet(); },
+      }),
     ]),
   ]);
 }

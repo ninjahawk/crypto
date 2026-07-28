@@ -1,0 +1,4 @@
+{
+  "emailEndpoint": null,
+  "_note": "Set emailEndpoint to a Formspree/Buttondown/Google Form POST URL to start collecting addresses off-device. Until then addresses queue in localStorage and the UI says so rather than pretending it sent."
+}

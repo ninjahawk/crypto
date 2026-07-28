@@ -56,8 +56,15 @@ export function fmtCompact(value) {
   return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
 }
 
-export function toneOf(value) {
-  if (!Number.isFinite(value) || value === 0) return 'flat';
+/**
+ * Colour for a signed value.
+ *
+ * The epsilon matters: a P&L of -0.000001 is displayed as "-$0.00" and must not
+ * render red. Rounding to two decimals for display while colouring off the raw
+ * float is how you end up shipping a red zero.
+ */
+export function toneOf(value, epsilon = 0.005) {
+  if (!Number.isFinite(value) || Math.abs(value) < epsilon) return 'flat';
   return value > 0 ? 'pos' : 'neg';
 }
 

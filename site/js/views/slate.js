@@ -1,5 +1,6 @@
 import { el, clear, fmtPct, fmtCompact, toneOf, tokenAvatar, fmtCountdown, toast } from '../ui.js';
 import { lockEntry } from '../state.js';
+import { openTokenSheet } from './token.js';
 
 /**
  * The pick surface. This is the screen that decides whether anyone stays:
@@ -37,7 +38,7 @@ export function renderSlate(ctx, mount, go, onDraft) {
       el('p', {
         class: 'prose',
         style: 'margin:-4px 0 14px',
-        text: `Equal weight, ${(100 / need).toFixed(0)}% each. Scored on real price movement when the contest closes.`,
+        text: `You get $10,000. These five open at ${(100 / need).toFixed(0)}% each — then you trade them however you like.`,
       }),
     );
   }
@@ -94,6 +95,13 @@ export function renderSlate(ctx, mount, go, onDraft) {
             token.mc ? el('span', { text: ` · $${fmtCompact(token.mc)} mc` }) : null,
           ]),
           el('span', { class: 'pick-check', text: '✓' }),
+          el('span', {
+            class: 'pick-info',
+            role: 'button',
+            'aria-label': `${token.name ?? id} details`,
+            text: 'ⓘ',
+            onClick: (e) => { e.stopPropagation(); openTokenSheet(ctx, id); },
+          }),
         ]),
       );
     }
@@ -119,12 +127,12 @@ export function renderSlate(ctx, mount, go, onDraft) {
     return el('button', {
       class: `btn ${ready ? 'is-lime' : ''}`,
       disabled: !ready,
-      text: ready ? `Lock in ${need} picks` : `Pick ${need - count} more`,
+      text: ready ? `Deploy $10,000` : `Pick ${need - count} more`,
       onClick: () => {
         if (!ready) return;
         try {
-          lockEntry(slate.contestId, [...selected], new Date(now).toISOString());
-          toast('Locked in. Good luck.');
+          lockEntry(slate.contestId, [...selected], new Date(now).toISOString(), slate.openPrices);
+          toast('$10,000 deployed. Good luck.');
           go('contest');
         } catch (err) {
           toast(err.message);

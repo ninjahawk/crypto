@@ -23,6 +23,14 @@ export async function loadSnapshot() {
   return loadJSON('snapshot.json');
 }
 
+export async function loadConfig() {
+  try {
+    return await loadJSON('config.json');
+  } catch {
+    return {};
+  }
+}
+
 export async function loadHistory() {
   try {
     return await loadJSON('history.json');
@@ -33,12 +41,13 @@ export async function loadHistory() {
 
 /** Everything a view needs, in one call. */
 export async function loadAll() {
-  const [slate, snapshot, history] = await Promise.all([
+  const [slate, snapshot, history, config] = await Promise.all([
     loadSlate(),
     loadSnapshot(),
     loadHistory(),
+    loadConfig(),
   ]);
-  return { slate, snapshot, history };
+  return { slate, snapshot, history, config };
 }
 
 /**

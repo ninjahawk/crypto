@@ -54,6 +54,8 @@ async function fetchMarkets(ids) {
   url.searchParams.set('ids', ids.join(','));
   url.searchParams.set('per_page', '250');
   url.searchParams.set('price_change_percentage', '24h');
+  // 7d hourly sparkline feeds the token-detail bar chart.
+  url.searchParams.set('sparkline', 'true');
 
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const res = await fetch(url, { headers: { accept: 'application/json' } });
@@ -69,6 +71,23 @@ async function fetchMarkets(ids) {
   throw new Error('coingecko: exhausted retries');
 }
 
+/**
+ * Reduce a 7d hourly sparkline (~168 points) to 7 daily closes.
+ * The detail chart wants "last seven days", not a noisy hourly line — the
+ * reference apps all show a handful of bars against a threshold, not a squiggle.
+ */
+function dailyPoints(prices) {
+  if (!Array.isArray(prices) || prices.length < 8) return null;
+  const out = [];
+  const step = prices.length / 7;
+  for (let i = 1; i <= 7; i += 1) {
+    const idx = Math.min(prices.length - 1, Math.round(i * step) - 1);
+    const v = prices[idx];
+    if (Number.isFinite(v) && v > 0) out.push(Number(v.toPrecision(8)));
+  }
+  return out.length === 7 ? out : null;
+}
+
 function toSnapshot(markets) {
   const tokens = {};
   for (const m of markets) {
@@ -81,6 +100,7 @@ function toSnapshot(markets) {
       img: m.image,
       mc: m.market_cap ?? null,
       ch24: m.price_change_percentage_24h ?? 0,
+      spark: dailyPoints(m.sparkline_in_7d?.price),
     };
   }
   return { ts: new Date().toISOString(), tokens };
@@ -124,9 +144,11 @@ function buildSlate(contestId, snapshot) {
 
   const openPrices = {};
   const openMeta = {};
+  const history = {};
   for (const id of tokens) {
     openPrices[id] = snapshot.tokens[id].price;
     openMeta[id] = { ch24: snapshot.tokens[id].ch24 ?? 0 };
+    if (snapshot.tokens[id].spark) history[id] = snapshot.tokens[id].spark;
   }
 
   return {
@@ -144,6 +166,7 @@ function buildSlate(contestId, snapshot) {
     tokens,
     openPrices,
     openMeta,
+    history,
   };
 }
 

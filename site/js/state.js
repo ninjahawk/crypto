@@ -8,6 +8,8 @@
  * v1 is local-only. Nothing here implies accounts or human opponents exist yet.
  */
 
+import { newBook, allocateEqually } from './bankroll.js';
+
 const KEY = 'cutline.v1';
 
 const EMPTY = {
@@ -16,6 +18,10 @@ const EMPTY = {
   interests: [],
   foundingNumber: null,
   entries: {}, // contestId -> { picks, lockedAt, contestId }
+  books: {},   // contestId -> bankroll book (see bankroll.js)
+  rivals: [],  // self-selected opponents (DECISIONS 0011)
+  lastRanks: {}, // contestId -> { entryId: rank } for movement deltas
+  email: null,
   results: {}, // contestId -> { rank, score, fieldNote }
   streak: { count: 0, lastPlayed: null, freezesUsed: 0, freezeMonth: null },
   seenIntro: false,
@@ -57,9 +63,6 @@ export function ensurePlayer() {
   if (cache.playerId) return cache;
   return update((s) => {
     s.playerId = `p-${crypto.randomUUID().slice(0, 8)}`;
-    // Founding number is local and cosmetic until accounts exist. It is not a
-    // claim about how many people are playing.
-    s.foundingNumber = null;
   });
 }
 
@@ -86,19 +89,88 @@ export function entryFor(contestId) {
   return cache.entries[contestId] ?? null;
 }
 
-/** Lock picks for a contest. Refuses to overwrite an existing entry. */
-export function lockEntry(contestId, picks, nowISO) {
+/**
+ * Lock picks for a contest and deploy the bankroll across them.
+ *
+ * The picks are the opening position, not the whole game — from here the
+ * player can sell, rebalance and redeploy cash for the rest of the contest.
+ * That is the pick'em → portfolio bridge (DECISIONS 0010).
+ */
+export function lockEntry(contestId, picks, nowISO, openPrices) {
   if (cache.entries[contestId]) {
     throw new Error('Entry already locked for this contest');
   }
+  const book = allocateEqually(newBook(), picks, openPrices, nowISO);
   return update((s) => {
-    s.entries[contestId] = {
-      contestId,
-      picks: [...picks],
-      lockedAt: nowISO,
-    };
+    s.entries[contestId] = { contestId, picks: [...picks], lockedAt: nowISO };
+    s.books[contestId] = book;
+    if (s.foundingNumber == null) s.foundingNumber = nextFoundingNumber();
     bumpStreak(s, contestId);
   });
+}
+
+export function bookFor(contestId) {
+  return cache.books[contestId] ?? null;
+}
+
+/** Persist a book after a trade. The log inside it is append-only. */
+export function saveBook(contestId, book) {
+  return update((s) => {
+    s.books[contestId] = book;
+  });
+}
+
+/**
+ * Founding number.
+ *
+ * Local and cosmetic until accounts exist, and deliberately *not* presented as
+ * a count of how many people are playing — that would be a fabricated field
+ * size (DECISIONS 0004). It is a join-order badge, nothing more.
+ */
+function nextFoundingNumber() {
+  return Math.max(1, Object.keys(cache.entries).length + 1);
+}
+
+/** Rivals: self-selected opponents to scope the board to (DECISIONS 0011). */
+export function toggleRival(rivalId) {
+  return update((s) => {
+    const i = s.rivals.indexOf(rivalId);
+    if (i >= 0) s.rivals.splice(i, 1);
+    else if (s.rivals.length < 3) s.rivals.push(rivalId);
+  });
+}
+
+/**
+ * Rank movement since the previous look.
+ *
+ * Movement motivates everyone; status only motivates whoever is already on
+ * top (DECISIONS 0011). Positive means climbed.
+ */
+export function rankDeltas(contestId, ranked) {
+  const previous = cache.lastRanks[contestId] ?? {};
+  const deltas = {};
+  for (const row of ranked) {
+    const before = previous[row.entryId];
+    deltas[row.entryId] = Number.isFinite(before) ? before - row.rank : 0;
+  }
+  return deltas;
+}
+
+/** Snapshot current ranks so the next visit can diff against them. */
+export function rememberRanks(contestId, ranked) {
+  return update((s) => {
+    s.lastRanks[contestId] = Object.fromEntries(ranked.map((r) => [r.entryId, r.rank]));
+  });
+}
+
+export function setEmail(address) {
+  return update((s) => {
+    s.email = String(address).trim().toLowerCase() || null;
+  });
+}
+
+export function getRivals() {
+  return [...cache.rivals];
 }
 
 export const FREEZES_PER_MONTH = 1;

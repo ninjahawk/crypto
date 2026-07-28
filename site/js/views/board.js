@@ -1,5 +1,6 @@
 import { el, clear, fmtScore, toneOf, ordinal } from '../ui.js';
 import { GHOST_DEFS } from '../ghosts.js';
+import { rankDeltas, rememberRanks } from '../state.js';
 
 /**
  * The board.
@@ -26,6 +27,7 @@ export function renderBoard(ctx, mount, go) {
     ]),
   );
 
+  const deltas = rankDeltas(slate.contestId, ranked);
   const paying = slate.payingPositions;
   const board = el('div', { class: 'card' });
 
@@ -33,6 +35,7 @@ export function renderBoard(ctx, mount, go) {
   ranked.forEach((row, index) => {
     const isMe = row.entryId === 'me';
     const def = GHOST_DEFS.find((g) => g.id === row.entryId);
+    const delta = deltas[row.entryId] ?? 0;
 
     // The cut line drawn where it actually falls in the list.
     if (!cutDrawn && index >= paying) {
@@ -54,12 +57,21 @@ export function renderBoard(ctx, mount, go) {
           ]),
           el('div', { class: 'board-sub', text: row.isGhost ? def?.blurb ?? '' : `${row.picks.length} picks` }),
         ]),
-        el('div', { class: `board-score num ${toneOf(row.score)}`, text: fmtScore(row.score) }),
+        el('div', { class: 'board-right' }, [
+          el('div', { class: `board-score num ${toneOf(row.score)}`, text: fmtScore(row.score) }),
+          delta !== 0
+            ? el('div', {
+                class: `board-delta num ${delta > 0 ? 'pos' : 'neg'}`,
+                text: `${delta > 0 ? '▲' : '▼'}${Math.abs(delta)}`,
+              })
+            : el('div', { class: 'board-delta flat', text: '–' }),
+        ]),
       ]),
     );
   });
 
   mount.append(board);
+  rememberRanks(slate.contestId, ranked);
 
   const me = ranked.find((r) => r.entryId === 'me');
   const ghostsBeaten = me ? ranked.filter((r) => r.isGhost && r.score < me.score).length : 0;

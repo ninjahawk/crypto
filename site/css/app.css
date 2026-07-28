@@ -380,7 +380,7 @@ img { max-width: 100%; display: block; }
 }
 .board-name { font-weight: 700; font-size: 15px; letter-spacing: -0.01em; }
 .board-sub { font-size: 12px; color: var(--text-3); margin-top: 1px; }
-.board-score { margin-left: auto; font-weight: 800; font-size: 15px; }
+
 
 .ghost-tag {
   display: inline-block;
@@ -623,3 +623,107 @@ table.prize tr:last-child td { border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ------------------------------------------------------- trading desk --- */
+
+.row-tap {
+  width: 100%;
+  text-align: left;
+  background: none;
+  transition: opacity 0.15s var(--ease), transform 0.12s var(--ease);
+}
+.row-tap:active { transform: scale(0.99); opacity: 0.8; }
+.row-tap[disabled] { opacity: 0.35; }
+.row-tap[disabled]:active { transform: none; }
+
+.ticket-amount {
+  font-size: clamp(40px, 13vw, 56px);
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 18px 0 4px;
+}
+.ticket-hint { font-size: 13.5px; color: var(--text-3); }
+
+.ticket-chips { display: flex; gap: 8px; margin: 18px 0 16px; }
+.ticket-chip {
+  flex: 1;
+  padding: 12px 0;
+  border-radius: var(--r-chip);
+  background: var(--surface-2);
+  font-weight: 700;
+  font-size: 14px;
+  transition: background 0.15s var(--ease), transform 0.12s var(--ease);
+}
+.ticket-chip:active { transform: scale(0.96); background: var(--surface-3); }
+
+.field {
+  width: 100%;
+  padding: 15px 16px;
+  border-radius: var(--r-inner);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 16px; /* 16px stops iOS zooming the viewport on focus */
+  font-weight: 600;
+}
+.field::placeholder { color: var(--text-3); font-weight: 500; }
+.field:focus { outline: none; border-color: var(--accent); background: var(--surface-3); }
+.field.is-bad { border-color: var(--neg); }
+
+.board-right { margin-left: auto; text-align: right; flex: none; }
+.board-score { font-weight: 800; font-size: 15px; }
+.board-delta { font-size: 11.5px; font-weight: 700; margin-top: 2px; }
+
+/* --------------------------------------------------------- token sheet -- */
+
+.token-head { display: flex; align-items: center; gap: 13px; margin-bottom: 6px; }
+.token-sym { font-size: 22px; font-weight: 850; letter-spacing: -0.03em; }
+.token-name { font-size: 13px; color: var(--text-3); }
+.token-price { font-size: 19px; font-weight: 800; }
+.token-move { font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+.chart { margin-top: 18px; }
+.chart-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.chart-threshold { font-size: 11.5px; color: var(--text-3); font-weight: 700; }
+
+.chart-body {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 132px;
+  padding: 0 2px;
+}
+.chart-line {
+  position: absolute;
+  left: 0; right: 0;
+  height: 0;
+  border-top: 1px dashed var(--text-3);
+  opacity: 0.65;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.bar-col { flex: 1; display: flex; flex-direction: column; height: 100%; }
+.bar-track { flex: 1; display: flex; align-items: flex-end; }
+.bar {
+  width: 100%;
+  border-radius: 5px 5px 2px 2px;
+  transition: height 0.4s var(--ease);
+}
+.bar.is-up { background: linear-gradient(180deg, var(--pos), rgba(47,214,113,0.45)); }
+.bar.is-down { background: linear-gradient(180deg, rgba(255,77,77,0.85), rgba(255,77,77,0.3)); }
+.bar-label { font-size: 9.5px; color: var(--text-3); text-align: center; margin-top: 6px; font-weight: 600; }
+
+.token-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 18px; }
+
+.pick-info {
+  position: absolute;
+  bottom: 10px; right: 10px;
+  font-size: 14px;
+  color: var(--text-3);
+  line-height: 1;
+  padding: 4px;
+}
+.pick-info:active { color: var(--text); }
