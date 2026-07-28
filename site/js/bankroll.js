@@ -24,8 +24,15 @@ const money = (v) => roundTo(v, MONEY_DP);
 
 export const STARTING_CAPITAL = 10000;
 
-/** Max share of equity in any one token (DECISIONS 0008 — anti-degen). */
-export const MAX_POSITION_PCT = 40;
+/**
+ * No position cap (DECISIONS 0019).
+ *
+ * A cap is the single thing that most makes a fake account stop feeling like a
+ * real one, and going all-in on a conviction call is the whole appeal. Variance
+ * control lives in season scoring instead: the season ranks on consistency
+ * across daily placements, so one lucky all-in cannot win a month.
+ */
+export const MAX_POSITION_PCT = 100;
 
 export function newBook(startingCapital = STARTING_CAPITAL) {
   if (!Number.isFinite(startingCapital) || startingCapital <= 0) {
@@ -36,6 +43,9 @@ export function newBook(startingCapital = STARTING_CAPITAL) {
     cash: startingCapital,
     positions: {},
     log: [],
+    // Equity at the open of each measurement window, so daily/weekly/season
+    // returns all come off one continuous account (DECISIONS 0018).
+    marks: {},
   };
 }
 
@@ -69,11 +79,9 @@ export function returnPct(book, prices) {
   return roundTo(((equity(book, prices) - book.startingCapital) / book.startingCapital) * 100);
 }
 
-/** Largest amount that may be put into one token without breaching the cap. */
+/** Largest amount deployable into one token — simply the cash on hand. */
 export function maxSpendOn(book, tokenId, prices) {
-  const cap = (equity(book, prices) * MAX_POSITION_PCT) / 100;
-  const held = positionValue(book, tokenId, prices);
-  return money(Math.max(0, Math.min(book.cash, cap - held)));
+  return money(Math.max(0, book.cash));
 }
 
 /**
@@ -92,13 +100,6 @@ export function openPosition(book, tokenId, usdAmount, prices, ts) {
   }
   if (amount > book.cash + 1e-8) {
     throw new RangeError(`openPosition: insufficient cash (have ${book.cash}, need ${amount})`);
-  }
-
-  const allowed = maxSpendOn(book, tokenId, prices);
-  if (amount > allowed + 1e-8) {
-    throw new RangeError(
-      `openPosition: ${MAX_POSITION_PCT}% position cap — max ${allowed} into ${tokenId}`,
-    );
   }
 
   const qty = amount / price;
@@ -169,6 +170,24 @@ export function allocateEqually(book, tokenIds, prices, ts) {
     if (amount > 0) next = openPosition(next, tokenId, amount, prices, ts);
   }
   return next;
+}
+
+/**
+ * Record the account's value at the open of an interval, once.
+ *
+ * Marks are write-once: re-marking an interval that already opened would
+ * silently rewrite someone's return for a window that is already being scored.
+ */
+export function markInterval(book, intervalId, prices) {
+  if (book.marks?.[intervalId] != null) return book;
+  return { ...book, marks: { ...book.marks, [intervalId]: equity(book, prices) } };
+}
+
+/** Percent return over an interval, measured from its opening mark. */
+export function intervalReturn(book, intervalId, prices) {
+  const opened = book.marks?.[intervalId];
+  if (!Number.isFinite(opened) || opened <= 0) return 0;
+  return roundTo(((equity(book, prices) - opened) / opened) * 100);
 }
 
 /** Per-position rows for the UI, richest first. */

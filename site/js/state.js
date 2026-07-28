@@ -8,7 +8,7 @@
  * v1 is local-only. Nothing here implies accounts or human opponents exist yet.
  */
 
-import { newBook, allocateEqually } from './bankroll.js';
+import { newBook, allocateEqually, markInterval } from './bankroll.js';
 
 const KEY = 'cutline.v1';
 
@@ -18,7 +18,7 @@ const EMPTY = {
   interests: [],
   foundingNumber: null,
   entries: {}, // contestId -> { picks, lockedAt, contestId }
-  books: {},   // contestId -> bankroll book (see bankroll.js)
+  books: {},   // seasonId (YYYY-MM) -> bankroll book (DECISIONS 0018)
   rivals: [],  // self-selected opponents (DECISIONS 0011)
   lastRanks: {}, // contestId -> { entryId: rank } for movement deltas
   email: null,
@@ -100,23 +100,45 @@ export function lockEntry(contestId, picks, nowISO, openPrices) {
   if (cache.entries[contestId]) {
     throw new Error('Entry already locked for this contest');
   }
-  const book = allocateEqually(newBook(), picks, openPrices, nowISO);
+  const seasonId = seasonOf(contestId);
+  const existing = cache.books[seasonId];
+  // The on-ramp only seeds positions on a fresh account. Someone already
+  // trading this season keeps the account they have built (DECISIONS 0018).
+  const book = existing ?? allocateEqually(newBook(), picks, openPrices, nowISO);
   return update((s) => {
     s.entries[contestId] = { contestId, picks: [...picks], lockedAt: nowISO };
-    s.books[contestId] = book;
+    s.books[seasonId] = book;
     if (s.foundingNumber == null) s.foundingNumber = nextFoundingNumber();
     bumpStreak(s, contestId);
   });
 }
 
+export const seasonOf = (contestId) => String(contestId).slice(0, 7);
+
+/**
+ * The season account. Created on first touch so trading never waits on
+ * picking — you can open the app and buy something immediately.
+ */
+export function ensureBook(contestId, prices) {
+  const seasonId = seasonOf(contestId);
+  let book = cache.books[seasonId] ?? newBook();
+  book = markInterval(book, seasonId, prices);   // season open
+  book = markInterval(book, contestId, prices);  // day open
+  if (cache.books[seasonId] !== book) {
+    update((s) => { s.books[seasonId] = book; });
+  }
+  return book;
+}
+
 export function bookFor(contestId) {
-  return cache.books[contestId] ?? null;
+  return cache.books[seasonOf(contestId)] ?? null;
 }
 
 /** Persist a book after a trade. The log inside it is append-only. */
 export function saveBook(contestId, book) {
+  const seasonId = seasonOf(contestId);
   return update((s) => {
-    s.books[contestId] = book;
+    s.books[seasonId] = book;
   });
 }
 

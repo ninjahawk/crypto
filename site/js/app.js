@@ -1,7 +1,8 @@
 import { loadAll, closePrices as computeClosePrices, openMeta } from './data.js';
-import { scoreContest, cutLine } from './scoring.js';
+import { scoreContest, cutLine, rankEntries } from './scoring.js';
 import { buildGhosts } from './ghosts.js';
-import { getState, ensurePlayer, entryFor, setInterests, setEmail, dismissIntro, recordResult } from './state.js';
+import { getState, ensurePlayer, entryFor, setInterests, setEmail, dismissIntro, recordResult, ensureBook } from './state.js';
+import { intervalReturn, equity } from './bankroll.js';
 import { submitEmail, isValidEmail, storedEmail } from './email.js';
 import { el, $, clear, toast, fmtCountdown } from './ui.js';
 import { drawCard, shareCard } from './share.js';
@@ -61,7 +62,7 @@ async function boot() {
   buildNav();
   // Land on the slate when there is no entry yet — the first meaningful action
   // should be one tap away, not behind a dashboard.
-  app.view = entryFor(app.data.slate.contestId) ? 'contest' : 'slate';
+  app.view = entryFor(app.data.slate.contestId) ? 'trade' : 'slate';
   render();
 
   // The countdown ticks every second, but a full re-render at 1Hz would drop
@@ -138,25 +139,36 @@ function buildContext() {
     opensAt: slate.opensAt,
   });
 
-  const entries = [...ghosts];
-  if (entry) {
-    entries.push({
-      entryId: 'me',
-      name: 'You',
-      picks: entry.picks,
-      lockedAt: entry.lockedAt,
-      isGhost: false,
-    });
-  }
-
+  // Ghosts hold fixed baskets, so their interval return is the basket's
+  // percent change. The player's is their account's percent change over the
+  // same window. Both are percent return — directly comparable (DECISIONS 0018).
   let ranked = [];
   try {
-    ranked = scoreContest(entries, slate.openPrices, closes, { picksRequired: slate.picksRequired });
+    ranked = scoreContest(ghosts, slate.openPrices, closes, {});
   } catch (err) {
-    console.error('scoring failed', err);
+    console.error('ghost scoring failed', err);
   }
 
-  const cut = entry ? cutLine(ranked, 'me', slate.payingPositions) : null;
+  // The account exists whether or not anyone has picked, because trading is
+  // available immediately.
+  const book = ensureBook(slate.contestId, closes);
+  const hasTraded = book.log.length > 0;
+
+  if (hasTraded) {
+    ranked = rankEntries([
+      ...ranked,
+      {
+        entryId: 'me',
+        name: 'You',
+        picks: Object.keys(book.positions),
+        lockedAt: entry?.lockedAt ?? slate.opensAt,
+        isGhost: false,
+        score: intervalReturn(book, slate.contestId, closes),
+      },
+    ]);
+  }
+
+  const cut = hasTraded ? cutLine(ranked, 'me', slate.payingPositions) : null;
 
   return {
     slate,
@@ -166,6 +178,8 @@ function buildContext() {
     ranked,
     cut,
     closePrices: closes,
+    book,
+    equity: equity(book, closes),
     draft: app.draft,
     now: Date.now(),
   };

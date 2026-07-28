@@ -1,5 +1,5 @@
 import { el, clear, fmtPrice, fmtPct, toneOf, tokenAvatar, toast, animateNumber } from '../ui.js';
-import { bookFor, saveBook } from '../state.js';
+import { ensureBook, saveBook } from '../state.js';
 import {
   equity, returnPct, positionRows, maxSpendOn, openPosition, closePosition,
 } from '../bankroll.js';
@@ -19,23 +19,15 @@ export function renderTrade(ctx, mount, go) {
   const { slate, snapshot, entry, closePrices: prices, now } = ctx;
   clear(mount);
 
-  if (!entry) {
-    mount.append(
-      el('div', { class: 'empty' }, [
-        el('div', { class: 'empty-title', text: 'No bankroll yet' }),
-        el('div', { text: `Pick ${slate.picksRequired} to put your $10,000 to work.` }),
-      ]),
-    );
-    return { dock: () => el('button', { class: 'btn', text: 'Open the slate', onClick: () => go('slate') }) };
-  }
-
-  let book = bookFor(slate.contestId);
-  if (!book) {
-    mount.append(el('div', { class: 'empty' }, [el('div', { class: 'empty-title', text: 'Bankroll unavailable' })]));
-    return { dock: () => null };
-  }
+  // Trading never waits on picking — open the app, buy something (0018).
+  let book = ensureBook(slate.contestId, prices);
 
   const isClosed = Date.parse(slate.closesAt) <= now;
+
+  // Everything published, biggest first — not just today's slate.
+  const universe = Object.keys(snapshot.tokens).sort(
+    (a, b) => (snapshot.tokens[b].mc ?? 0) - (snapshot.tokens[a].mc ?? 0),
+  );
 
   function repaint() {
     clear(mount);
@@ -115,18 +107,17 @@ export function renderTrade(ctx, mount, go) {
     if (!isClosed) {
       mount.append(
         el('div', { class: 'section-head' }, [
-          el('h2', { text: 'Buy' }),
+          el('h2', { text: 'Market' }),
           el('span', { class: 'hint num', text: `${usd(book.cash)} available` }),
         ]),
       );
 
       const buys = el('div', { class: 'card' });
-      for (const tokenId of slate.tokens) {
+      for (const tokenId of universe) {
         const token = snapshot.tokens[tokenId];
         if (!token) continue;
         const room = maxSpendOn(book, tokenId, prices);
-        const openPrice = slate.openPrices[tokenId];
-        const move = openPrice > 0 ? ((prices[tokenId] - openPrice) / openPrice) * 100 : 0;
+        const move = token.ch24 ?? 0;
 
         buys.append(
           el('button', {
@@ -140,7 +131,7 @@ export function renderTrade(ctx, mount, go) {
               el('div', { class: 'row-name', text: token.sym?.toUpperCase() ?? tokenId }),
               el('div', {
                 class: 'row-sub num',
-                text: room < 0.01 ? 'at position cap' : `up to ${usd(room)}`,
+                text: room < 0.01 ? 'no cash free' : `up to ${usd(room)}`,
               }),
             ]),
             el('div', { class: 'row-right' }, [
@@ -157,7 +148,7 @@ export function renderTrade(ctx, mount, go) {
       el('div', { class: 'notice', style: 'margin-top:12px' }, [
         el('span', { class: 'notice-icon', text: 'ⓘ' }),
         el('div', {
-          html: 'Virtual money at real prices. Nothing is bought, sold or held for real — and no single token can exceed <b>40%</b> of your bankroll.',
+          html: 'Virtual money, real live prices. Size however you want — <b>all-in is allowed</b>. Nothing is bought, sold or held for real.',
         }),
       ]),
     );

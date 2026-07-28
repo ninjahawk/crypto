@@ -254,3 +254,36 @@ Format: `NNNN — Title` / Date / Status / Decision / Why / Consequences.
 **Why:** Form is the decision-relevant number when choosing — it is what the reference pick'em apps put in the hero slot. Movement-since-open is also exactly 0.00% for every token at contest open, which is the precise moment a new arrival is deciding whether the product is alive.
 
 **Consequences:** The two screens answer different questions — the slate answers "what should I pick", the contest answers "how am I doing" — and neither ever renders a dead board.
+
+---
+
+## 0018 — Live trading is the product; pick'em is only the on-ramp
+
+**Date:** 2026-07-28 · **Status:** Accepted · **Supersedes the framing in 0010**
+
+**Decision:** The product is a continuous fake-money trading account. Every player gets $10,000 at season start and trades the full token universe freely for the whole season. Competition is decided purely on account value: whoever is up the most over an interval wins that interval. Pick-5 remains as a sub-60-second on-ramp that seeds a first set of positions, and nothing more.
+
+**Why:** 0010 read the reference apps too literally and treated pick'em as the game. It is not. The premise is "run a portfolio on real markets with fake money" — the picking is onboarding. Building pick'em as the product produced a daily poll with trading bolted inside it: gated behind five taps, restricted to eleven curated tokens, and wiped every 24 hours.
+
+**Consequences:**
+- One persistent book per season (calendar month), not one per contest.
+- Everyone resets to $10,000 at season start, so each season is a fair race and early joiners cannot compound an advantage.
+- Daily, weekly and season leaderboards all measure **percent return over that window** from the same continuous account. Equity is marked at each interval open.
+- Trading is available immediately. Picking five is optional.
+- The tradeable universe is everything in the published snapshot, not the daily slate. The slate now only drives the pick-5 hook.
+- Ghost strategies stay comparable because they are also scored on percent return over the interval.
+
+---
+
+## 0019 — No position cap
+
+**Date:** 2026-07-28 · **Status:** Accepted · **Supersedes the 40% cap in 0008**
+
+**Decision:** A player may hold any share of their account in any token, up to 100%.
+
+**Why:** A hard cap is the single thing that most makes this stop feeling like a real trading account, and going all-in on a conviction call is the point of the genre. The anti-degen argument in 0008 is still valid but the cap was the wrong instrument for it.
+
+**Consequences:**
+- Variance control moves entirely to season scoring: the season ranks on consistency across daily placements, so one lucky all-in cannot win a month.
+- Daily prizes stay small relative to the season prize for the same reason.
+- `MAX_POSITION_PCT` is retired. `maxSpendOn` now returns available cash.

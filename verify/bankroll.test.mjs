@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import {
   newBook, openPosition, closePosition, equity, returnPct, holdingsValue,
   positionValue, positionRows, maxSpendOn, allocateEqually, reconciles,
-  STARTING_CAPITAL, MAX_POSITION_PCT,
+  STARTING_CAPITAL, markInterval, intervalReturn,
 } from '../site/js/bankroll.js';
 
 const P = { btc: 100, eth: 50, doge: 0.1 };
@@ -63,18 +63,18 @@ test('cannot sell what is not held', () => {
   assert.throws(() => closePosition(b, 'btc', 999, P, TS), RangeError);
 });
 
-test('position cap is enforced on open (DECISIONS 0008)', () => {
+test('all-in is allowed — there is no position cap (DECISIONS 0019)', () => {
   const b = newBook();
-  const cap = (STARTING_CAPITAL * MAX_POSITION_PCT) / 100;
-  assert.equal(maxSpendOn(b, 'btc', P), cap);
-  assert.throws(() => openPosition(b, 'btc', cap + 1, P, TS), RangeError);
-  assert.doesNotThrow(() => openPosition(b, 'btc', cap, P, TS));
+  assert.equal(maxSpendOn(b, 'btc', P), STARTING_CAPITAL, 'the whole account is deployable');
+  const allIn = openPosition(b, 'btc', STARTING_CAPITAL, P, TS);
+  assert.equal(allIn.cash, 0);
+  assert.equal(positionValue(allIn, 'btc', P), STARTING_CAPITAL);
 });
 
-test('the cap counts what is already held, so it cannot be split around', () => {
-  let b = openPosition(newBook(), 'btc', 3000, P, TS);
-  assert.equal(maxSpendOn(b, 'btc', P), 1000);
-  assert.throws(() => openPosition(b, 'btc', 1500, P, TS), RangeError);
+test('cash is still the hard limit', () => {
+  const b = openPosition(newBook(), 'btc', 6000, P, TS);
+  assert.equal(maxSpendOn(b, 'btc', P), 4000);
+  assert.throws(() => openPosition(b, 'btc', 4001, P, TS), RangeError);
 });
 
 test('a missing or zero price is refused, never silently treated as free', () => {
@@ -126,10 +126,27 @@ test('an untouched equal allocation matches the pick-em score exactly', () => {
   assert.ok(Math.abs(bankrollReturn - pickEmScore) < 1e-4, `bankroll ${bankrollReturn} vs pick-em ${pickEmScore}`);
 });
 
-test('equal allocation respects the position cap', () => {
-  // Two picks would be 50% each. The cap and the five-pick slate are
-  // consistent by design (20% each); anything under three picks is not.
-  assert.throws(() => allocateEqually(newBook(), ['btc', 'eth'], P, TS), RangeError);
+test('equal allocation works at any pick count now the cap is gone', () => {
+  const b = allocateEqually(newBook(), ['btc', 'eth'], P, TS);
+  assert.equal(b.cash, 0);
+  assert.equal(Object.keys(b.positions).length, 2);
+});
+
+test('interval marks measure return from the window open, not from deposit', () => {
+  let b = allocateEqually(newBook(), ['btc', 'eth'], P, TS);
+  b = markInterval(b, '2026-03-10', P);
+  assert.equal(intervalReturn(b, '2026-03-10', P), 0);
+  // btc doubles: half the account doubles, so +50% on the day.
+  assert.equal(intervalReturn(b, '2026-03-10', { ...P, btc: 200 }), 50);
+});
+
+test('an interval mark is write-once', () => {
+  let b = newBook();
+  b = markInterval(b, 'd1', P);
+  const first = b.marks.d1;
+  b = openPosition(b, 'btc', 5000, P, TS);
+  b = markInterval(b, 'd1', { ...P, btc: 500 });
+  assert.equal(b.marks.d1, first, 'remarking would rewrite a return already being scored');
 });
 
 test('position rows report P&L per holding', () => {
