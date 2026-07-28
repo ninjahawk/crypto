@@ -1,6 +1,4 @@
-import { loadAll, closePrices as computeClosePrices, openMeta } from './data.js';
-import { scoreContest, cutLine, rankEntries } from './scoring.js';
-import { buildGhosts } from './ghosts.js';
+import { loadAll, closePrices as computeClosePrices } from './data.js';
 import { getState, ensurePlayer, entryFor, setInterests, setEmail, dismissIntro, recordResult, ensureBook } from './state.js';
 import { intervalReturn, equity } from './bankroll.js';
 import { submitEmail, isValidEmail, storedEmail } from './email.js';
@@ -8,35 +6,10 @@ import { el, $, clear, toast, fmtCountdown } from './ui.js';
 import { drawCard, shareCard } from './share.js';
 import { createPriceFeed } from './prices.js';
 
-import { renderSlate } from './views/slate.js';
-import { renderTrade } from './views/trade.js';
-import { renderContest } from './views/contest.js';
-import { renderBoard } from './views/board.js';
-import { renderSeason } from './views/season.js';
-import { renderRules } from './views/rules.js';
-
-const TABS = [
-  { id: 'contest', label: 'Contest' },
-  { id: 'trade', label: 'Trade' },
-  { id: 'slate', label: 'Slate' },
-  { id: 'board', label: 'Board' },
-  { id: 'season', label: 'Season' },
-  { id: 'rules', label: 'Rules' },
-];
-
-const RENDERERS = {
-  slate: renderSlate,
-  trade: renderTrade,
-  contest: renderContest,
-  board: renderBoard,
-  season: renderSeason,
-  rules: renderRules,
-};
+import { renderHome, openStats } from './views/home.js';
 
 const app = {
   data: null,
-  view: 'slate',
-  draft: [],
   ticker: null,
   moved: new Map(), // tokenId -> 'up' | 'down', drained by flashMoved()
 };
@@ -61,10 +34,7 @@ async function boot() {
     return;
   }
 
-  buildNav();
-  // Land on the slate when there is no entry yet — the first meaningful action
-  // should be one tap away, not behind a dashboard.
-  app.view = entryFor(app.data.slate.contestId) ? 'trade' : 'slate';
+  buildHeader();
   render();
 
   // The countdown ticks every second, but a full re-render at 1Hz would drop
@@ -165,34 +135,17 @@ async function refreshData() {
   }
 }
 
-function buildNav() {
+function buildHeader() {
   const nav = clear($('#navchips'));
-  for (const tab of TABS) {
-    nav.append(
-      el('button', {
-        class: 'chip',
-        type: 'button',
-        role: 'tab',
-        'aria-selected': String(app.view === tab.id),
-        text: tab.label,
-        onClick: () => go(tab.id),
-      }),
-    );
-  }
-}
-
-function syncNav() {
-  [...$('#navchips').children].forEach((chip, i) => {
-    chip.setAttribute('aria-selected', String(TABS[i].id === app.view));
-  });
-}
-
-function go(target) {
-  if (target === '#share') return openShare();
-  app.view = target;
-  syncNav();
-  render();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  nav.append(
+    el('button', {
+      class: 'icon-chip',
+      type: 'button',
+      'aria-label': 'Your stats',
+      text: '🔥',
+      onClick: () => openStats(buildContext()),
+    }),
+  );
 }
 
 /** Everything a view needs, derived fresh on each render. */
@@ -200,51 +153,14 @@ function buildContext() {
   const { slate, snapshot, history } = app.data;
   const entry = entryFor(slate.contestId);
   const closes = computeClosePrices(slate, snapshot);
-  const meta = openMeta(slate);
 
-  const ghosts = buildGhosts(slate.tokens, meta, slate.picksRequired, {
-    prevWinnerPicks: history.contests?.[0]?.winner?.picks ?? null,
-    opensAt: slate.opensAt,
-  });
-
-  // Ghosts hold fixed baskets, so their interval return is the basket's
-  // percent change. The player's is their account's percent change over the
-  // same window. Both are percent return — directly comparable (DECISIONS 0018).
-  let ranked = [];
-  try {
-    ranked = scoreContest(ghosts, slate.openPrices, closes, {});
-  } catch (err) {
-    console.error('ghost scoring failed', err);
-  }
-
-  // The account exists whether or not anyone has picked, because trading is
-  // available immediately.
   const book = ensureBook(slate.contestId, closes);
-  const hasTraded = book.log.length > 0;
-
-  if (hasTraded) {
-    ranked = rankEntries([
-      ...ranked,
-      {
-        entryId: 'me',
-        name: 'You',
-        picks: Object.keys(book.positions),
-        lockedAt: entry?.lockedAt ?? slate.opensAt,
-        isGhost: false,
-        score: intervalReturn(book, slate.contestId, closes),
-      },
-    ]);
-  }
-
-  const cut = hasTraded ? cutLine(ranked, 'me', slate.payingPositions) : null;
 
   return {
     slate,
     snapshot,
     history,
     entry,
-    ranked,
-    cut,
     closePrices: closes,
     book,
     equity: equity(book, closes),
@@ -255,16 +171,8 @@ function buildContext() {
 
 function render() {
   const ctx = buildContext();
-  const mount = $('#view');
-  const renderer = RENDERERS[app.view] ?? renderSlate;
-
-  // The slate's dock label tracks the selection, so it rebuilds on each toggle.
-  const handle = renderer(ctx, mount, go, (picks) => {
-    app.draft = picks;
-    paintDock(handle.dock());
-  });
-
-  paintDock(handle?.dock?.() ?? null);
+  renderHome(ctx, $('#view'));
+  paintDock(null);
   tickCountdowns();
   markLive();
   maybeShowIntro();

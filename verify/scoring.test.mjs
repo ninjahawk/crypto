@@ -9,7 +9,6 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { pct, roundTo, scoreEntry, rankEntries, scoreContest, cutLine, seasonScore } from '../site/js/scoring.js';
-import { buildGhosts, ghostPicks } from '../site/js/ghosts.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const loadFixture = (n) => JSON.parse(readFileSync(join(here, 'fixtures', `contest-${n}.json`), 'utf8'));
@@ -115,7 +114,7 @@ test('seasonScore: sums placements, missed days cost one worse than last', () =>
 });
 
 // ---------------------------------------------------------------------------
-// Golden fixtures — the hand-computed contests
+// Golden fixtures — hand-computed contests, scoring maths only.
 // ---------------------------------------------------------------------------
 
 for (const fx of FIXTURES) {
@@ -125,61 +124,19 @@ for (const fx of FIXTURES) {
     }
   });
 
-  test(`${fx.contestId}: ghost selection`, () => {
-    for (const [ghostId, expected] of Object.entries(fx.expectedGhostPicks)) {
-      const picks = ghostPicks(ghostId, fx.slate, fx.meta, fx.picksRequired, fx.prevWinnerPicks);
-      assert.deepEqual(picks, expected, `ghost ${ghostId}`);
-    }
-    for (const ghostId of fx.absentGhosts) {
-      const picks = ghostPicks(ghostId, fx.slate, fx.meta, fx.picksRequired, fx.prevWinnerPicks);
-      assert.equal(picks, null, `ghost ${ghostId} should not run on this slate`);
-    }
-  });
-
-  test(`${fx.contestId}: diamond and paper hands disagree`, () => {
-    const diamond = ghostPicks('diamond-hands', fx.slate, fx.meta, fx.picksRequired);
-    const paper = ghostPicks('paper-hands', fx.slate, fx.meta, fx.picksRequired);
-    assert.notDeepEqual(diamond, paper);
-  });
-
-  test(`${fx.contestId}: scores match hand computation`, () => {
-    const ranked = runFixture(fx);
-    for (const [entryId, expected] of Object.entries(fx.expectedScores)) {
-      const entry = ranked.find((e) => e.entryId === entryId);
-      assert.ok(entry, `missing entry ${entryId}`);
-      assert.equal(entry.score, expected, `score for ${entryId}`);
-    }
-  });
-
-  test(`${fx.contestId}: finishing order matches hand computation`, () => {
-    const ranked = runFixture(fx);
-    assert.deepEqual(ranked.map((e) => e.entryId), fx.expectedOrder);
-  });
-
-  test(`${fx.contestId}: cut line`, () => {
-    const ranked = runFixture(fx);
-    for (const [entryId, expected] of Object.entries(fx.expectedCutLine)) {
-      const actual = cutLine(ranked, entryId, fx.payingPositions);
-      assert.equal(actual.inTheMoney, expected.inTheMoney, `inTheMoney for ${entryId}`);
-      assert.equal(actual.distance, expected.distance, `distance for ${entryId}`);
-      assert.equal(actual.threshold, expected.threshold, `threshold for ${entryId}`);
+  test(`${fx.contestId}: entries score as hand-computed`, () => {
+    for (const entry of fx.entries) {
+      const score = scoreEntry(entry.picks, fx.openPrices, fx.closePrices, {
+        picksRequired: fx.picksRequired,
+      });
+      assert.equal(score, fx.expectedScores[entry.entryId], `score for ${entry.entryId}`);
     }
   });
 
   test(`${fx.contestId}: deterministic across 100 runs`, () => {
-    const first = JSON.stringify(runFixture(fx));
-    for (let i = 0; i < 100; i += 1) {
-      assert.equal(JSON.stringify(runFixture(fx)), first);
-    }
-  });
-}
-
-function runFixture(fx) {
-  const ghosts = buildGhosts(fx.slate, fx.meta, fx.picksRequired, {
-    prevWinnerPicks: fx.prevWinnerPicks,
-    opensAt: fx.opensAt,
-  });
-  return scoreContest([...fx.entries, ...ghosts], fx.openPrices, fx.closePrices, {
-    picksRequired: fx.picksRequired,
+    const once = () => fx.entries.map((e) =>
+      scoreEntry(e.picks, fx.openPrices, fx.closePrices, { picksRequired: fx.picksRequired }));
+    const first = JSON.stringify(once());
+    for (let i = 0; i < 100; i += 1) assert.equal(JSON.stringify(once()), first);
   });
 }

@@ -1,17 +1,15 @@
 /**
- * Acceptance criteria — the stopping conditions for the loop register.
+ * Acceptance criteria — structural stopping conditions.
  *
- * Every accepted decision in spec/DECISIONS.md that implies user-visible
- * behaviour gets an assertion here. If a decision was agreed and not built,
- * this suite is red. That is the point: it makes "agreed but silently skipped"
- * impossible, which is exactly how the first build went wrong.
+ * These guard shape rather than behaviour: that the app is one screen, that
+ * removed things stay removed, that the modules the product depends on exist.
+ * Behaviour lives in the unit suites; the user journey lives in verify/e2e.mjs.
  *
- * Assertions are grouped by loop. A loop is done when its group is green —
- * not when it looks finished.
+ * The point is that a decision, once made, cannot quietly rot back.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,99 +17,90 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => (existsSync(join(ROOT, p)) ? readFileSync(join(ROOT, p), 'utf8') : '');
 const has = (p) => existsSync(join(ROOT, p));
 
+const APP = read('site/js/app.js');
+const HOME = read('site/js/views/home.js');
+
 // ---------------------------------------------------------------------------
-// Loop 4 — Bankroll & trading. The premise.
+// One screen
 // ---------------------------------------------------------------------------
 
-test('LOOP 4: a bankroll module exists', () => {
-  assert.ok(has('site/js/bankroll.js'), 'site/js/bankroll.js must exist — you cannot invest fake money without it');
+test('the app is one screen, not a tab bar', () => {
+  assert.ok(has('site/js/views/home.js'), 'home view must exist');
+  assert.doesNotMatch(APP, /const TABS\s*=/, 'a tab list means the app fragmented again');
+  assert.doesNotMatch(APP, /RENDERERS/, 'multiple top-level renderers means multiple apps');
 });
 
-test('LOOP 4: bankroll exposes open, close and equity', async () => {
+test('bankroll, holdings and market all live on the home view', () => {
+  assert.match(HOME, /bankroll/i);
+  assert.match(HOME, /Holding/);
+  assert.match(HOME, /Market/);
+});
+
+test('the views that fragmented the app are gone', () => {
+  for (const dead of ['board.js', 'season.js', 'rules.js', 'contest.js', 'trade.js', 'slate.js']) {
+    assert.ok(!has(`site/js/views/${dead}`), `${dead} should have been removed`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Removed things stay removed
+// ---------------------------------------------------------------------------
+
+test('no bot opponents anywhere in the client', () => {
+  assert.ok(!has('site/js/ghosts.js'), 'ghosts module should be gone');
+  for (const file of readdirSync(join(ROOT, 'site/js'), { recursive: true })) {
+    if (!String(file).endsWith('.js')) continue;
+    const source = read(join('site/js', String(file)));
+    assert.doesNotMatch(source, /\bBOT\b/, `${file} still renders a BOT badge`);
+    assert.doesNotMatch(source, /buildGhosts|GHOST_DEFS/, `${file} still references ghosts`);
+  }
+});
+
+test('no legal boilerplate that was never asked for', () => {
+  for (const file of readdirSync(join(ROOT, 'site/js'), { recursive: true })) {
+    if (!String(file).endsWith('.js')) continue;
+    const source = read(join('site/js', String(file)));
+    assert.doesNotMatch(source, /official rules|void where prohibited|is not a sponsor/i,
+      `${file} carries unrequested legal copy`);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// The parts the product actually runs on
+// ---------------------------------------------------------------------------
+
+test('the bankroll module is present and complete', async () => {
   const mod = await import('../site/js/bankroll.js');
-  for (const fn of ['openPosition', 'closePosition', 'equity', 'newBook']) {
-    assert.equal(typeof mod[fn], 'function', `bankroll.${fn} must be a function`);
+  for (const fn of ['newBook', 'openPosition', 'closePosition', 'equity', 'markInterval', 'intervalReturn']) {
+    assert.equal(typeof mod[fn], 'function', `bankroll.${fn} must exist`);
   }
 });
 
-test('LOOP 4: the trade UI is reachable', () => {
-  assert.ok(has('site/js/views/trade.js'), 'a trade view must exist');
-  assert.match(read('site/js/app.js'), /trade/i, 'the trade view must be wired into the router');
+test('the price feed has more than one source', async () => {
+  const { SOURCES } = await import('../site/js/prices.js');
+  assert.ok(SOURCES.length >= 2, 'one source is a single point of failure');
 });
 
-// ---------------------------------------------------------------------------
-// Loop 6 — Email capture.
-// ---------------------------------------------------------------------------
-
-test('LOOP 6: email capture exists and is wired', () => {
-  assert.ok(has('site/js/email.js'), 'an email capture module must exist');
-  assert.match(read('site/js/app.js'), /email/i, 'email capture must be wired into the app');
+test('trading is reachable without picking anything first', () => {
+  assert.match(APP, /renderHome/);
+  assert.doesNotMatch(APP, /entryFor\(app\.data\.slate\.contestId\)\s*\?\s*'trade'/,
+    'the home screen must not be gated behind an entry');
 });
 
-// ---------------------------------------------------------------------------
-// Loop 7 — Token detail sheet with performance bars.
-// ---------------------------------------------------------------------------
-
-test('LOOP 7: token detail sheet exists', () => {
-  assert.ok(has('site/js/views/token.js'), 'a token detail view must exist');
+test('the market is ranked by trending score, not market cap', () => {
+  assert.match(HOME, /\.score/);
+  assert.doesNotMatch(HOME, /\.mc\s*\?\?\s*0\)\s*-\s*\(snapshot/, 'market-cap ordering puts blue chips first');
 });
 
-test('LOOP 7: the slate publishes history for the bar chart', () => {
-  const slate = read('site/data/slate.json');
-  if (!slate) return; // pipeline has not run in this checkout
-  const parsed = JSON.parse(slate);
-  assert.ok(parsed.history, 'slate.json must publish per-token history for the detail chart');
+test('token artwork is rendered', () => {
+  assert.match(HOME, /tokenAvatar/);
 });
 
-// ---------------------------------------------------------------------------
-// Loop 8 — Leaderboard deltas (DECISIONS 0011: movement beats status).
-// ---------------------------------------------------------------------------
-
-test('LOOP 8: the board renders movement, not just rank', () => {
-  const board = read('site/js/views/board.js');
-  assert.match(board, /delta/i, 'DECISIONS 0011: every row must show movement since the last settle');
+test('positions can be sized with a typed dollar amount', () => {
+  assert.match(HOME, /ticket-input/);
 });
 
-// ---------------------------------------------------------------------------
-// Loop 10 — Rivals (DECISIONS 0011: scoped comparison).
-// ---------------------------------------------------------------------------
-
-test('LOOP 10: rivals can be selected', () => {
-  const state = read('site/js/state.js');
-  assert.match(state, /rival/i, 'DECISIONS 0011: players must be able to scope the board to chosen rivals');
-});
-
-// ---------------------------------------------------------------------------
-// Loop 12 — Founding number (DECISIONS 0004: scarcity framing, honestly).
-// ---------------------------------------------------------------------------
-
-test('LOOP 12: a founding number is actually assigned', () => {
-  const state = read('site/js/state.js');
-  assert.doesNotMatch(
-    state,
-    /foundingNumber\s*=\s*null;\s*$/m,
-    'founding number must be assigned at first entry, not left permanently null',
-  );
-});
-
-// ---------------------------------------------------------------------------
-// Standing invariants — these must never regress, on any loop.
-// ---------------------------------------------------------------------------
-
-test('INVARIANT: no fabricated humans anywhere in the client', () => {
-  const files = ['site/js/views/board.js', 'site/js/app.js', 'site/js/state.js'];
-  for (const f of files) {
-    assert.doesNotMatch(read(f), /fakeUser|mockPlayer|dummyName|randomUsername/i, `${f} must not fabricate players`);
-  }
-});
-
-test('INVARIANT: ghosts are declared prize-ineligible in user-facing copy', () => {
-  assert.match(read('site/js/views/board.js'), /prize/i);
-});
-
-test('INVARIANT: the loop register stays in sync with the build', () => {
-  const loops = read('spec/LOOPS.md');
-  assert.ok(loops, 'spec/LOOPS.md must exist');
-  // Anything still marked not-built must not also be claimed done elsewhere.
-  assert.match(loops, /\|\s*\d+\s*\|/, 'the register must list loops');
+test('email capture still exists', () => {
+  assert.ok(has('site/js/email.js'));
+  assert.match(APP, /submitEmail/);
 });

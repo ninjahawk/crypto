@@ -127,20 +127,29 @@ async function main() {
 
   // ---- 1. loads ----------------------------------------------------------
   await page.goto(URL, { waitUntil: 'domcontentloaded' });
-  const loaded = await page.waitForSelector('.pick, .row-tap', { timeout: 20000 }).then(() => true).catch(() => false);
+  const loaded = await page.waitForSelector('.row-buy', { timeout: 20000 }).then(() => true).catch(() => false);
   if (!check('site loads and renders content', loaded)) return;
 
-  // ---- 2. the board is a live top-100, with artwork ----------------------
-  await page.locator('.chip', { hasText: 'Trade' }).click();
-  await page.waitForTimeout(1200);
+  // ---- 2. one screen ------------------------------------------------------
+  // Everything that matters is on the first screen. No tab-hopping: six tabs
+  // was five apps, and nobody was ever going to reach page four.
+  const tabCount = await page.locator('#navchips .chip').count();
+  check('no tab bar — it is one screen', tabCount === 0, `${tabCount} tabs`);
 
-  const marketRows = await page.locator('.row-tap').count();
+  check('bankroll is on the first screen', (await page.locator('.value-main').count()) === 1);
+  check('market is on the first screen', (await page.locator('.row-buy').count()) > 0);
+
+  const bodyText = await page.locator('body').innerText();
+  check('no bot opponents anywhere', !/\bBOT\b/.test(bodyText));
+  check('no unrequested legal page', !/official rules|void where prohibited|apple is not a sponsor/i.test(bodyText));
+
+  const marketRows = await page.locator('.row-buy').count();
   check('market carries 50+ tokens', marketRows >= 50, `${marketRows} rows`);
 
-  const imgs = await page.locator('.row-tap .avatar img').count();
+  const imgs = await page.locator('.row .avatar img').count();
   check('most tokens have artwork', imgs >= marketRows * 0.6, `${imgs}/${marketRows} with art`);
 
-  const names = await page.locator('.row-tap .row-name').allInnerTexts();
+  const names = await page.locator('.row .row-name').allInnerTexts();
   check('bitcoin is not tradeable', !names.some((n) => /^BTC$/i.test(n.trim())));
 
   // ---- 3. real prices reach the app --------------------------------------
@@ -198,13 +207,12 @@ async function main() {
     });
 
     await stubPage.goto(URL, { waitUntil: 'domcontentloaded' });
-    await stubPage.waitForSelector('.pick, .row-tap', { timeout: 20000 });
-    await stubPage.locator('.chip', { hasText: 'Trade' }).click();
+    await stubPage.waitForSelector('.row-buy', { timeout: 20000 });
     await stubPage.waitForTimeout(1500);
 
-    const stubBefore = await stubPage.locator('.row-tap .row-value').first().innerText();
+    const stubBefore = await stubPage.locator('.row .row-value').first().innerText();
     await stubPage.waitForTimeout(11000);
-    const stubAfter = await stubPage.locator('.row-tap .row-value').first().innerText();
+    const stubAfter = await stubPage.locator('.row .row-value').first().innerText();
 
     check('price requests are actually issued', bumped > 0, `${bumped} requests`);
     check('live feed repaints the DOM', stubBefore !== stubAfter, `${stubBefore} → ${stubAfter}`);
@@ -213,17 +221,17 @@ async function main() {
 
     // Open a position, then confirm it revalues as the price moves. This was a
     // reported symptom: holdings stayed frozen while the market list ticked.
-    await stubPage.locator('.row-tap').first().click();
+    await stubPage.locator('.row-buy').first().click();
     await stubPage.waitForTimeout(600);
     await stubPage.locator('.ticket-input').fill('500');
     await stubPage.waitForTimeout(200);
     await stubPage.locator('.sheet .btn').first().click();
     await stubPage.waitForTimeout(1200);
 
-    const heldBefore = await stubPage.locator('.card .row-tap .row-sub').first().innerText();
+    const heldBefore = await stubPage.locator('[data-token].row-tap:not(.row-buy) .row-sub').first().innerText();
     const equityBeforeTick = await stubPage.locator('.value-main').innerText();
     await stubPage.waitForTimeout(11000);
-    const heldAfter = await stubPage.locator('.card .row-tap .row-sub').first().innerText();
+    const heldAfter = await stubPage.locator('[data-token].row-tap:not(.row-buy) .row-sub').first().innerText();
     const equityAfterTick = await stubPage.locator('.value-main').innerText();
 
     check('open positions revalue as prices move', heldBefore !== heldAfter,
@@ -235,7 +243,7 @@ async function main() {
   }
 
   // ---- 4. typed dollar amounts ------------------------------------------
-  await page.locator('.row-tap').first().click();
+  await page.locator('.row-buy').first().click();
   await page.waitForTimeout(600);
 
   const hasInput = await page.locator('.ticket-input').count();
@@ -251,11 +259,11 @@ async function main() {
   await page.locator('.sheet .btn').first().click();
   await page.waitForTimeout(1500);
 
-  const cashLine = await page.locator('.value-deltas').innerText();
-  const cashAfter = money(cashLine.split('Cash')[1] ?? '0');
+  const cashLine = await page.locator('.hero-sub').innerText();
+  const cashAfter = money((cashLine.split('·')[1] ?? '0').replace('cash', ''));
   check('buying $250 leaves ~$9,750 cash', Math.abs(cashAfter - 9750) < 5, `cash $${cashAfter}`);
 
-  const positions = await page.locator('.card .row-tap').count();
+  const positions = await page.locator('[data-token].row-tap:not(.row-buy)').count();
   check('a position now exists', positions > 0);
 
   const equityAfter = money(await page.locator('.value-main').innerText());
@@ -263,21 +271,18 @@ async function main() {
     `${equityBefore} → ${equityAfter}`);
 
   // ---- 7. selling returns the money -------------------------------------
-  await page.locator('.card .row-tap').first().click();
+  await page.locator('[data-token].row-tap:not(.row-buy)').first().click();
   await page.waitForTimeout(600);
   await page.locator('.ticket-chip', { hasText: 'Max' }).click();
   await page.waitForTimeout(300);
   await page.locator('.sheet .btn').first().click();
   await page.waitForTimeout(1500);
 
-  const cashFinal = money((await page.locator('.value-deltas').innerText()).split('Cash')[1] ?? '0');
+  const cashFinal = money(((await page.locator('.hero-sub').innerText()).split('·')[1] ?? '0').replace('cash', ''));
   check('selling everything returns cash to ~$10,000', cashFinal > 9000, `cash $${cashFinal}`);
 
-  // ---- 8. the board shows the player ------------------------------------
-  await page.locator('.chip', { hasText: 'Board' }).click();
-  await page.waitForTimeout(1000);
-  check('player appears on the board', (await page.locator('.board-row.is-me').count()) === 1);
-  check('board shows movement deltas', (await page.locator('.board-delta').count()) > 0);
+  // ---- 8. standing is visible without leaving the screen -----------------
+  check('your standing is on the main screen', (await page.locator('.standing').count()) > 0);
 
   // ---- 9. layout ---------------------------------------------------------
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);

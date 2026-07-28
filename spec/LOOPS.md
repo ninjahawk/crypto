@@ -2,63 +2,49 @@
 
 ```yaml
 last_updated: 2026-07-28
-purpose: the stopping conditions for every build loop
-runner: node --test "verify/*.test.mjs" && node verify/ui.mjs
+gate: node verify/e2e.mjs      # exit 0 = shippable
+unit: node --test "verify/*.test.mjs"
+lint: node verify/lint-constraints.mjs
 ```
 
-## Why this file exists
+## The rule
 
-The first build of this site was a **single pass**, not a loop. I wrote one spec, built everything else in one shot, self-assessed it as done, and shipped it. Half the agreed decisions never got implemented — leagues, deltas, rivals, token detail, email capture, and the virtual bankroll, which is the entire premise of the product.
+> A loop is a task with a check. A task without a check is just hope.
 
-That is textbook **silent failure**: confident output, zero progress against the actual goal. A properly engineered loop cannot fail that way, because the loop does not terminate on the agent's opinion. It terminates on a machine-checkable condition.
+Write the check first. Watch it fail. Build until it passes. Never weaken a
+check to go green — that is moving the benchmark, and it is how a loop talks
+itself into success.
 
-## The rules
+## Done
 
-1. **Verifiable goal per loop.** Every loop below has acceptance criteria that a script can evaluate. "Looks good" is not a stopping condition.
-2. **Decisions are executable.** Every accepted entry in `DECISIONS.md` that implies user-visible behaviour has a matching assertion in `verify/acceptance.test.mjs`. If it is not built, the suite is red. A decision cannot be quietly skipped.
-3. **No-progress detection.** Three consecutive failed attempts on one loop means the spec is ambiguous, not the code stubborn. Stop and re-spec.
-4. **Loops end green.** Build clean, all suites pass, committed. Never start a loop on a broken tree.
-5. **Bounded.** Each loop is one vertical slice. If it cannot be verified in isolation, it is too big — split it.
-6. **The register is the memory.** Status here is the truth across loops, so nothing agreed can fall out of context and get forgotten.
+| Loop | Gate |
+|---|---|
+| Scoring engine | 3 hand-computed fixtures, 100× deterministic |
+| Bankroll | `equity == cash + Σ(qty × price)` after every op, 200-op walk |
+| Price feed | Two sources, failover, dedupe, parse real payloads |
+| Streak | Freeze spend, month rollover, double-miss break |
+| Top-100 board | 100 tokens, 91 with artwork, ranked by trending score |
+| Live prices | Real data reaches app state; DOM repaints; rows flash |
+| Typed sizing | Exact dollar amounts, percentage chips as shortcuts |
+| **One screen** | No tab bar; bankroll + holdings + market on first paint |
+| **No bots** | No BOT badge or ghost module anywhere in the client |
+| **No unrequested legal** | No rules page, disclaimers or sponsor copy |
 
-## Status
+Current: **25/25 e2e · 80 unit · 4 invariants.**
 
-| # | Loop | Verifiable goal | Status |
-|---|---|---|---|
-| 1 | Scoring engine | 3 hand-computed fixtures reproduce exactly, 100× deterministic | ✅ done |
-| 2 | Price pipeline | Snapshot publishes, slate rolls at UTC boundary, prior contest settles | ✅ done |
-| 3 | Streak | Freeze spend, month rollover, double-miss break all covered | ✅ done |
-| 4 | **Bankroll & trading** | **$10k virtual capital, buy/sell at live prices, positions, cash, P&L in dollars; equity reconciles to cash + holdings on every op** | 🔴 **not built — this is the premise** |
-| 5 | Trade UI | Can open a position, close it, and see equity change, driven in a real browser | 🔴 not built |
-| 6 | Email capture | Address captured at contest lock, persisted, posts to a configured endpoint | 🔴 not built |
-| 7 | Token detail | Tap a token → sheet with last-7d bars against a threshold line | 🔴 not built |
-| 8 | Leaderboard deltas | Every row shows movement since last settle | 🔴 not built (DECISIONS 0011) |
-| 9 | Leagues | Capped cohorts of ~30, promotion/demotion, per-league cut line | 🔴 not built (DECISIONS 0013) |
-| 10 | Rivals | Pick up to 3 opponents, scoped board | 🔴 not built (DECISIONS 0011) |
-| 11 | Result moment | Contest close → result screen → share card, auto | 🟡 partial |
-| 12 | Founding number | Assigned at first entry, shown, permanent | 🔴 not built |
+## Open
 
-## Loop 4 — Bankroll & trading (current)
+| Loop | Gate it needs |
+|---|---|
+| Human leaderboard | Real accounts (Supabase free tier). Until then the board shows nobody rather than inventing anyone. |
+| Result moment | Contest close → result → share card, automatically |
+| Share card | Generated at peak emotion; currently functional but plain |
+| Prizes | Only when funded. Never announce one that is not already paid for. |
 
-**Why it is first:** it is the product. A pick'em with no money is a poll. The premise is that you are running a portfolio, and every retention mechanic downstream — position sizing, rebalancing, watching equity move, the flex of a big call — depends on it existing.
+## Traps
 
-**Design.** Locking picks allocates the full bankroll equally across them, so pick'em stays a sub-60-second onboarding path and instantly becomes a real portfolio. From there the player can sell, rebalance, and redeploy cash for the rest of the contest. This is the progression path `DECISIONS.md` 0010 promised and never delivered.
-
-**Invariant that must always hold:**
-
-```
-equity == cash + Σ(qty × price)
-```
-
-Checked after every single operation. If it ever drifts, the money is wrong and the loop is not done.
-
-**Acceptance criteria**
-- [ ] Opening a position moves exactly `cost` from cash to holdings
-- [ ] Closing returns exactly `qty × price` to cash
-- [ ] Cannot spend cash that is not there
-- [ ] Cannot sell a quantity not held
-- [ ] Position cap of 40% enforced on open (DECISIONS 0008)
-- [ ] Equity reconciles after every operation, including partial sells
-- [ ] Return % from the bankroll equals the pick'em score when nothing has been traded
-- [ ] Trade log stays append-only (DECISIONS 0006)
-- [ ] Float drift stays under 1e-6 across a 200-operation random walk
+- Chromium here has no outbound HTTPS; Node does. Relay through Playwright
+  route handlers to test the live path with real data.
+- The browser cache serves stale JS and makes shipped fixes look unapplied.
+- `catch(() => [])` around a 429 reads as "no results" — it silently collapsed
+  the board from 100 tokens to 4.
